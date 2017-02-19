@@ -2,20 +2,9 @@
 #include <Wire.h>
 #include <math.h>
 
-// Barometer Configuration
-#define BARO_PRESSURE 	(0x48)
-#define BARO_TEMP 		(0x58)
-#define BARO_ADDRESS 	(0x77)
-#define BARO_RESET 		(0x1E)
-#define BARO_PROM_READ 	(0xA2)
 
 // calibration data
 uint16_t C[7] = {0};
-
-float Temperature;
-float Pressure;
-float Altitude;
-
 
 // Initialize barometer from unknown state
 void initBarometer(void) {
