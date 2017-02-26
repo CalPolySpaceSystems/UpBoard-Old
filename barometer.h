@@ -52,7 +52,7 @@ String ms5611ToString(struct MS5611data *data);
  * ONLY CALL THIS IF YOU MUST!
  * IT IS ALREADY IMPLEMENTED IN readTempMS6511 and readPressureMS5611
 */
-uint32_t readBarometerRaw();
+uint32_t readRawMS5611();
 
 
 #endif
