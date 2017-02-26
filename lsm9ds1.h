@@ -16,7 +16,9 @@ struct LSMData {
 	float mag[3];
 	//temperature data
 	float temp;
-}
+};
 
-void LSMRead(struct LSMData *out);
-void LSMSetup();
+void readLSM(struct LSMData *out);
+void initLSM();
+String lsmToString(struct LSMData *data);
+#endif

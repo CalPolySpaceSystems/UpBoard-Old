@@ -48,13 +48,12 @@ void processGPS(uint8_t *in, struct GPSData *out) {
 
 // Returns a string intended for debug logging GPS data;
 String gpsToString(struct GPSData *data) {
-  char s[11];
   String out = "Time";
-  out += dtostrf(data->time, 6, 4, s);
+  out += String(data->time);
   out += "\nLat: ";
-  out += dtostrf(data->lat, 6, 4, s);
+  out += String(data->lat);
   out += "\nLng: ";
-  out += dtostrf(data->lng, 6, 4, s);
+  out += String(data->lng);
   out += "Valid: ";
   out += data->valid;
   out += "\n";
