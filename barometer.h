@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 struct MS5611data {
-    float temperature;
+  float temperature;
 	float pressure;
 	float altitude;
 };
