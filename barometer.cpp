@@ -11,7 +11,6 @@
 
 // calibration data
 uint16_t C[7] = {0};
-int32_t dT;
 
 // Initialize barometer from unknown state
 void initMS5611(void) {
@@ -78,11 +77,13 @@ uint32_t readRawMS5611(void) {
 void readTempMS5611(struct MS5611data *data) {
     uint32_t D2; 
     int32_t T;
+    int32_t dT;
+
     D2  = readRawMS5611();
     dT = D2-((uint32_t)C[5] << 8);     //update '_dT'
-    // Below, 'dT' and '_C[6-1]'' must be casted in order to prevent overflow
+    // Below, 'dT' and '_C[6]'' must be casted in order to prevent overflow
     // A bitwise division can not be dobe since it is unpredictible for signed integers
-    T = 2000 + ((int64_t)dT * C[6-1])/8388608;
+    T = 2000 + ((int64_t)dT * C[6])/8388608;
     data->temperature = T / 100.0;
     return;
 }
@@ -94,6 +95,8 @@ void readTempMS5611(struct MS5611data *data) {
 */
 void readPressureMS5611(struct MS5611data *data) {
   uint32_t D1 = readRawMS5611();
+
+  int32_t dT = (int32_t)(((((data->temperature) * 100.0) - 2000) * 8388608) / C[6]);
   
   int64_t OFF  = (int64_t)C[2]*65536 
          + (int64_t)C[4]*dT/128;
