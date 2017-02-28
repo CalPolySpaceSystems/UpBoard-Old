@@ -3,10 +3,6 @@
 
 #include <Arduino.h>
 
-
-//device addresses
-
-
 struct LSMData {
 	//accelerometer data
 	float acc[3];

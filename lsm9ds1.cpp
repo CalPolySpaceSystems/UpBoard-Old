@@ -36,10 +36,10 @@ static void readRegister(uint8_t dev, uint8_t startReg, uint8_t len, int8_t *dat
 
 	// request chuck of data and continue reading after start register.
 	Wire.requestFrom(dev, len);
-	
+
 	// wait for data
 	while(Wire.available() == 0){};
-	
+
 	for(int i = 0; i < len; i++) {
 		data[i] = Wire.read();
 	}
@@ -63,64 +63,64 @@ void readLSM(struct LSMData *out){
 
 	for(int i = 0; i < 3; i++) {
 		int16_t gyr = gyro[2*i+1];
-    gyr = gyr << 8;
-    gyr |= (uint16_t) gyro[2*i];
-    out->gyr[i] = (float) gyr * LSM_GYRO_FACT;
+		gyr = gyr << 8;
+		gyr |= (uint16_t) gyro[2*i];
+		out->gyr[i] = (float) gyr * LSM_GYRO_FACT;
 	}
 
-  int8_t accel[6];
-  readRegister(LSM_ADR, LSM_ACC_START, 6, accel);
+	int8_t accel[6];
+	readRegister(LSM_ADR, LSM_ACC_START, 6, accel);
 
-  for(int i = 0; i < 3; i++) {
-    int16_t acc = accel[2*i+1];
-    acc = acc << 8;
-    acc |= (uint16_t) accel[2*i];
-    out->acc[i] = (float) acc * LSM_ACC_FACT;
-  }
+	for(int i = 0; i < 3; i++) {
+		int16_t acc = accel[2*i+1];
+		acc = acc << 8;
+		acc |= (uint16_t) accel[2*i];
+		out->acc[i] = (float) acc * LSM_ACC_FACT;
+	}
 
-  int8_t mag[6];
-  readRegister(LSM_MAG_ADR, LSM_MAG_START, 6, mag);
+	int8_t mag[6];
+	readRegister(LSM_MAG_ADR, LSM_MAG_START, 6, mag);
 
-  for(int i = 0; i < 3; i++) {
-    int16_t mg = mag[2*i+1];
-    mg = mg << 8;
-    mg |= (uint16_t) mag[2*i];
-    out->mag[i] = (float) mg * LSM_MAG_FACT;
-  }
+	for(int i = 0; i < 3; i++) {
+		int16_t mg = mag[2*i+1];
+		mg = mg << 8;
+		mg |= (uint16_t) mag[2*i];
+		out->mag[i] = (float) mg * LSM_MAG_FACT;
+	}
 
-  int8_t temp[2];
-  readRegister(LSM_ADR, LSM_TS_START, 2, temp);
-  int16_t tmp = temp[1];
-  tmp = tmp << 8;
-  tmp |= (uint16_t) temp[0];
-  out->temp = ((float) tmp/16) + 25;
+	int8_t temp[2];
+	readRegister(LSM_ADR, LSM_TS_START, 2, temp);
+	int16_t tmp = temp[1];
+	tmp = tmp << 8;
+	tmp |= (uint16_t) temp[0];
+	out->temp = ((float) tmp/16) + 25;
 }
 
 // Returns a string intended for debug logging LSM data;
 String lsmToString(struct LSMData *data) {
-  String out = "Gyr: X ";
-  out += String(data->gyr[0]);
-  out += " Y ";
-  out += String(data->gyr[1]);
-  out += " Z  ";
-  out += String(data->gyr[2]);
-  out += "\n";
-  out += "Acc: X ";
-  out += String(data->acc[0]);
-  out += " Y ";
-  out += String(data->acc[1]);
-  out += " Z  ";
-  out += String(data->acc[2]);
-  out += "\n";
-  out += "Mag: X ";
-  out += String(data->mag[0]);
-  out += " Y ";
-  out += String(data->mag[1]);
-  out += " Z  ";
-  out += String(data->mag[2]);
-  out += "\n";
-  out += "Temp: ";
-  out += String(data->temp);
-  out += "\n";
-  return out;
+	String out = "Gyr: X ";
+	out += String(data->gyr[0]);
+	out += " Y ";
+	out += String(data->gyr[1]);
+	out += " Z  ";
+	out += String(data->gyr[2]);
+	out += "\n";
+	out += "Acc: X ";
+	out += String(data->acc[0]);
+	out += " Y ";
+	out += String(data->acc[1]);
+	out += " Z  ";
+	out += String(data->acc[2]);
+	out += "\n";
+	out += "Mag: X ";
+	out += String(data->mag[0]);
+	out += " Y ";
+	out += String(data->mag[1]);
+	out += " Z  ";
+	out += String(data->mag[2]);
+	out += "\n";
+	out += "Temp: ";
+	out += String(data->temp);
+	out += "\n";
+	return out;
 }
