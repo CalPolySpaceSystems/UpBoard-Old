@@ -141,7 +141,6 @@ void createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struc
 	uint8_t pos = 0;
 	while(out[pos] != '\0') {
 		cs ^= (unsigned char) out[pos];
-		Serial.println(cs);
 		pos++;
 	}
 
