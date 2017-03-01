@@ -20,7 +20,7 @@ void fToA(char* out, float in) {
 
 // createPacket generates a telemetry packet.
 // LEN includes every charecter up to the start of length.
-// Format $TIME,LAT,LNG,GPSVALID,ALT,PRESSURE,MS5_TEMP,ACC_X,ACC_Y,ACC_Z,GYR_X,GYR_Y,GYR_Z,MAG_X,MAG_Y,MAG_Z,LMS_TEMP;LEN,CHECKSUM
+// Format $TIME,LAT,LNG,GPSVALID,ALT,PRESSURE,MS5_TEMP,ACC_X,ACC_Y,ACC_Z,GYR_X,GYR_Y,GYR_Z,MAG_X,MAG_Y,MAG_Z,LMS_TEMP;LEN,CHECKSUM*
 // Example packet: $1928.3746,1234.5677,9876.5429,0,5678.9013,50.6780,10.5677,-4.0,5.6700,6.2300,34.0,3.4500,67.8899,54.0,3.7500,53.8899,-110.9000;128,84
 void createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struct MS5611data *mdata) {
 	// set header and initial null byte
@@ -144,8 +144,8 @@ void createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struc
 		pos++;
 	}
 
-	// set message length
 	tmp[0] = '\0';
 	itoa(cs, tmp, 16);
 	strcat(out, tmp);
+	strcat(out, "*");
 }

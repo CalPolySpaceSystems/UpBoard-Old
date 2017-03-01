@@ -4,36 +4,53 @@
 #include "telemetry.h"
 
 void setup() {
-	Serial.begin(9600);
-	//Wire.begin();
-	//initLSM();
+	delay(2000);
+	// USB Communication
+	SerialUSB.begin(9600);
+	// XBee module
+	Serial1.begin(9600);
+	// GPS
+	Serial.begin(115200);
+	Wire.begin();
+	initLSM();
+	initMS5611();
+}
+
+uint8_t GPSOutput[48];
+int GPSOutputPos = -2;
+struct GPSData gdata;
+
+void loop() {
+	while (Serial.available()) {
+		// get the new byte:
+		char inChar = (char)Serial.read();
+
+		if(inChar == '$') {
+			GPSOutputPos = -1;
+		} else if(GPSOutputPos > -2) {
+			GPSOutputPos++;
+			GPSOutput[GPSOutputPos] = inChar;
+			// End of message, process and reset to start
+			if(GPSOutputPos > 46) {
+					processGPS(GPSOutput, &gdata);
+					GPSOutputPos = -2;
+			}
+		}
+	}
 
 	struct LSMData ldata;
-	ldata.temp = -110.90;
-	ldata.acc[0] = -4.00;
-	ldata.acc[1] = 5.67;
-	ldata.acc[2] = 6.23;
-	ldata.gyr[0] = 34;
-	ldata.gyr[1] = 3.45;
-	ldata.gyr[2] = 67.89;
-	ldata.mag[0] = 54;
-	ldata.mag[1] = 3.75;
-	ldata.mag[2] = 53.89;
-	struct GPSData gdata;
-	gdata.lat = 1234.5678;
-	gdata.lng = 9876.5432;
-	gdata.time = 1928.3746;
+	readLSM(&ldata);
 	struct MS5611data mdata;
-	mdata.altitude = 5678.9012;
-	mdata.pressure = 50.678;
-	mdata.temperature = 10.5677;
+	primeTempMS5611();
+	delay(10);
+	readTempMS5611(&mdata);
+	primePressureMS5611();
+	delay(10);
+	readPressureMS5611(&mdata);
+	calcAltitudeMS5611(&mdata);
 
 	char out[255] = "";
 	createPacket(out, &ldata, &gdata, &mdata);
-	Serial.println(out);
-}
-void loop() {
-	//struct LSMData data;
-	//readLSM(&data);
-	//SerialUSB.print(lsmToString(&data));
+	Serial1.print(out);
+	SerialUSB.println(out);
 }
