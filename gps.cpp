@@ -54,7 +54,7 @@ String gpsToString(struct GPSData *data) {
 	out += String(data->lat);
 	out += "\nLng: ";
 	out += String(data->lng);
-	out += "Valid: ";
+	out += "\nValid: ";
 	out += data->valid;
 	out += "\n";
 	return out;

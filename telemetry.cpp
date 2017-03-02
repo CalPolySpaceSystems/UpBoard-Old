@@ -4,8 +4,8 @@
 
 // fToA converts a float to a char array
 void fToA(char* out, float in) {
-	char temp[10]; // TODO: figure out right length
-	int16_t whole = (int16_t) in;    //truncate whole numbers
+	char temp[32]; // TODO: figure out right length
+	int32_t whole = (int32_t) in;    //truncate whole numbers
 	int16_t frac =  (int16_t) ((float)(in - (float) whole)*10000); //remove whole part of flt and shift 5 places over
 	if(frac < 0) {
 		frac *= -1;
