@@ -18,3 +18,4 @@ void readLSM(struct LSMData *out);
 void initLSM();
 String lsmToString(struct LSMData *data);
 #endif
+

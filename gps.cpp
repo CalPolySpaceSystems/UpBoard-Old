@@ -59,3 +59,4 @@ String gpsToString(struct GPSData *data) {
 	out += "\n";
 	return out;
 }
+

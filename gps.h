@@ -18,3 +18,4 @@ struct GPSData {
 void processGPS(uint8_t *in, struct GPSData *out);
 String gpsToString(struct GPSData *data);
 #endif
+
