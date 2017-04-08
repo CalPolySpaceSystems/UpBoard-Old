@@ -167,6 +167,8 @@ void createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struc
 	  fToA(tmp, char(state->launched));
 	  strcat(out, tmp);
 	  strcat(out, ",");
+
+  strcat(out, ";");
  
 	// set message length
 	tmp[0] = '\0';

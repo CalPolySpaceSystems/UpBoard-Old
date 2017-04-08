@@ -60,7 +60,7 @@ void setup() {
   // USB Communication
   SerialUSB.begin(9600);
   // XBee module
-  Serial1.begin(57600);
+  Serial1.begin(9600);
   // GPS
   Serial.begin(115200);
   Wire.begin();
