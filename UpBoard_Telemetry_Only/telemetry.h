@@ -5,8 +5,8 @@
 #include "gps.h"
 #include "lsm9ds1.h"
 #include "barometer.h"
-#include "control.h"
+//#include "control.h"
 
-void createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struct MS5611data *mdata, struct state *state);
+void createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struct MS5611data *mdata);
 #endif
 
