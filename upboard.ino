@@ -9,36 +9,35 @@
 #include "control.h"
 #include "digital_io.h"
 
+// Define digial pins
 #define BUZZER 3
 #define LED 4
 
+// Give sane names to serial outputs
+#define SerialXbee Serial1
+#define SerialGPS Serial
+
+// Control System Constants
+#define NUM_READINGS 50
+#define KP 0.367063690673387
+#define KD 0.344612096976194
+
+// Sensor State
 uint8_t GPSOutput[48];
 int GPSOutputPos = -2;
 struct GPSData gdata;
 struct MS5611data mdata;
-// Variables
-const int numReadings = 50; // Memory restricted, can make new readings struct if we don't need mag and temperature data
 struct LSMData offset;
-static struct LSMData readings[numReadings]; // Used for the moving average function
+
+// Control System State
+struct LSMData readings[NUM_READINGS]; // Used for the moving average function
 float prevAngle[3];
 
 Servo pitch1, pitch2, yaw1, yaw2;
 
-void InitServo(Servo myServo)
-{
-  myServo.writeMicroseconds(1500);
-  delay(500);
-  myServo.writeMicroseconds(1500-45*10);
-  delay(500);
-  myServo.writeMicroseconds(1500+45*10);
-  delay(1000);
-  myServo.writeMicroseconds(1500);
-  delay(500);
-}
+File flog;
 
-File ourlog;
 void setup() {
-
   pinMode(BUZZER, OUTPUT);
   pinMode(LED, OUTPUT);
   
@@ -47,45 +46,41 @@ void setup() {
   // USB Communication
   SerialUSB.begin(9600);
   // XBee module
-  Serial1.begin(9600);
+  SerialXbee.begin(9600);
   // GPS
-  Serial.begin(115200);
+  SerialGPS.begin(115200);
   
   Wire.begin();
   
   // see if the card is present and can be initialized:
   if (!SD.begin(8)) {
     SerialUSB.println("SD ERROR");
-    Serial1.println("SD ERROR");
+    SerialXbee.println("SD ERROR");
     beep(BUZZER, 400, 2000);
   }
   
-  File ourlog = SD.open("uplog.txt", FILE_WRITE);
+  File flog = SD.open("uplog.txt", FILE_WRITE);
+
+  // Set all the values in the moving average to zero
+  memset(readings, 0, NUM_READINGS * sizeof(struct LSMData));
   
   initLSM();
   initMS5611();
   
-  // Set all the values in the moving average to zero
-  for (int i = 0; i < numReadings; i++)
-  {
-    for (int j = 0; j < 3; j++)
-    {
-      readings[i].acc[j] = 0;
-      readings[i].gyr[j] = 0;
-    }
-  }
-  
+  // Read temperature requires piriming, delaying, and then reading.
+  // Since the temperature does not significantly change throughout flight,
+  // reading it at initalization is sufficent for altitude calculation.
   primeTempMS5611();
   delay(10);
-  
   readTempMS5611(&mdata);
-  
+
+
   pitch1.attach(6);
   pitch2.attach(7);
-  
   yaw1.attach(10);
   yaw2.attach(12);
-  
+
+  // Notify successful initialization of sensors
   blink(LED, 3, 100);
   digitalWrite(LED, HIGH);
   beep(BUZZER,660, 400);
@@ -96,13 +91,11 @@ void setup() {
   InitServo(yaw1);
   InitServo(yaw2);
 
+  // Notify successful initialization of servo positions
   beep(BUZZER, 1000, 1000);
-
 }
 
 void loop() {
-  double kp = 0.367063690673387;
-  double kd = 0.344612096976194;
   static float pitchArr[10], yawArr[10];
   static int controlCounter = 0;
   static struct LSMData ldata, prevData;
@@ -112,7 +105,6 @@ void loop() {
   //float angle[3] = {0, 0, 0};
   struct state state;
   primePressureMS5611();
-  //SerialUSB.println("Loop");
   while (Serial.available()) {
     // get the new byte:
     char inChar = (char)Serial.read();
@@ -170,8 +162,8 @@ void loop() {
   }
 
 
-  float pitchRaw = kd * ldata.gyr[0] + kp * state.angle[0];
-  float yawRaw = kd * ldata.gyr[1] + kp * state.angle[1];
+  float pitchRaw = KD * ldata.gyr[0] + KP * state.angle[0];
+  float yawRaw = KD * ldata.gyr[1] + KP * state.angle[1];
   if (pitchRaw > 15) {
     pitchRaw = 15;
   }
@@ -308,15 +300,15 @@ void sensorMovingAverage()
   }
   i++;
   /* Reset array count if array is full */
-  if (i >= numReadings)
+  if (i >= NUM_READINGS)
   {
     i = 0;
   }
   /* Take the average of all the readings */
   for (int j = 0; j < 3; j++)
   {
-    offset.acc[j] = total.acc[j] / numReadings;
-    offset.gyr[j] = total.gyr[j] / numReadings;
+    offset.acc[j] = total.acc[j] / NUM_READINGS;
+    offset.gyr[j] = total.gyr[j] / NUM_READINGS;
   }
   offset.acc[2] -= 1; //We should read 1 G in the z axis
 }

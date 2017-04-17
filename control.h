@@ -2,6 +2,8 @@
 #define _CONTROL_H_
 
 #include <Arduino.h>
+#include <Servo.h>
+
 
 struct state
 {
@@ -9,4 +11,6 @@ struct state
   bool launched;
   float dt;
 };
+
+void InitServo(Servo s);
 #endif
