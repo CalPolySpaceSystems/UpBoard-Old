@@ -7,6 +7,8 @@
 #include "barometer.h"
 #include "telemetry.h"
 #include "control.h"
+#include "digital_io.h"
+
 #define BUZZER 3
 #define LED 4
 
@@ -21,23 +23,6 @@ static struct LSMData readings[numReadings]; // Used for the moving average func
 float prevAngle[3];
 
 Servo pitch1, pitch2, yaw1, yaw2;
-
-
-void beep(float hz, float dur) { //beep frequency in Hz for duration in ms (not us)
-  int halfT = 500000 / hz;
-  for (int i = 0; i < (500 * dur / halfT) ; i++) {
-    digitalWrite(BUZZER, HIGH);
-    delayMicroseconds(halfT);
-    digitalWrite(BUZZER, LOW);
-    delayMicroseconds(halfT);
-  }
-}
-
-void blink(int time) {
-  digitalWrite(LED, HIGH);
-  delay(time);
-  digitalWrite(LED, LOW);
-}
 
 void InitServo(Servo myServo)
 {
@@ -56,23 +41,30 @@ void setup() {
 
   pinMode(BUZZER, OUTPUT);
   pinMode(LED, OUTPUT);
-  blink(500);
+  
+  blink(LED, 1, 500);
+  
   // USB Communication
   SerialUSB.begin(9600);
   // XBee module
   Serial1.begin(9600);
   // GPS
   Serial.begin(115200);
+  
   Wire.begin();
+  
   // see if the card is present and can be initialized:
   if (!SD.begin(8)) {
     SerialUSB.println("SD ERROR");
     Serial1.println("SD ERROR");
-    beep(400, 2000);
+    beep(BUZZER, 400, 2000);
   }
+  
   File ourlog = SD.open("uplog.txt", FILE_WRITE);
+  
   initLSM();
   initMS5611();
+  
   // Set all the values in the moving average to zero
   for (int i = 0; i < numReadings; i++)
   {
@@ -82,27 +74,29 @@ void setup() {
       readings[i].gyr[j] = 0;
     }
   }
+  
   primeTempMS5611();
   delay(10);
+  
   readTempMS5611(&mdata);
+  
   pitch1.attach(6);
   pitch2.attach(7);
+  
   yaw1.attach(10);
   yaw2.attach(12);
-  blink(100);
-  delay(100);
-  blink(100);
-  delay(100);
+  
+  blink(LED, 3, 100);
   digitalWrite(LED, HIGH);
-  beep(660, 400);
-  beep(770, 400);
+  beep(BUZZER,660, 400);
+  beep(BUZZER, 770, 400);
 
   InitServo(pitch1);
   InitServo(pitch2);
   InitServo(yaw1);
   InitServo(yaw2);
 
-  beep(1000, 1000);
+  beep(BUZZER, 1000, 1000);
 
 }
 
