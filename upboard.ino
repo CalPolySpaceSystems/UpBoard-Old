@@ -103,7 +103,7 @@ void setup() {
   InitServo(yaw2);
 
   beep(1000, 1000);
-  
+
 }
 
 void loop() {
@@ -175,7 +175,7 @@ void loop() {
 
   }
 
-  
+
   float pitchRaw = kd * ldata.gyr[0] + kp * state.angle[0];
   float yawRaw = kd * ldata.gyr[1] + kp * state.angle[1];
   if (pitchRaw > 15) {
@@ -190,7 +190,7 @@ void loop() {
   if (yawRaw < -15) {
     yawRaw = -15;
   }
-  
+
   pitchArr[controlCounter] = pitchRaw;
   yawArr[controlCounter] = yawRaw;
   controlCounter++;
@@ -325,5 +325,4 @@ void sensorMovingAverage()
     offset.gyr[j] = total.gyr[j] / numReadings;
   }
   offset.acc[2] -= 1; //We should read 1 G in the z axis
-
 }

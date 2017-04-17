@@ -4,14 +4,14 @@
 #include <Arduino.h>
 
 /* NOTE: all data reads must be primed an allow for a 10 ms
- *       delay after priming before reading. 
+ *       delay after priming before reading.
  */
 
 
 struct MS5611data {
-	float temperature;
-	float pressure;
-	float altitude;
+  float temperature;
+  float pressure;
+  float altitude;
 };
 
 void initMS5611(void);
@@ -38,4 +38,3 @@ uint32_t readRawMS5611();
 
 
 #endif
-
