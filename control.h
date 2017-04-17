@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-
 struct state
 {
   float angle[3];
@@ -12,5 +11,8 @@ struct state
   float dt;
 };
 
-void InitServo(Servo s);
+void initServo(Servo s);
+void applyGyroOffsets(struct LSMData *ldata, struct LSMData *offset);
+float compFilter(float oldAngle, float gyroData, float accAng, float dt);
+bool detectedLaunch(struct LSMData *data);
 #endif

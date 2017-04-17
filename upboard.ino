@@ -6,7 +6,7 @@
 #include "lsm9ds1.h"
 #include "barometer.h"
 #include "telemetry.h"
-#include "control.h"
+//#include "control.h"
 #include "digital_io.h"
 
 // Define digial pins
@@ -60,9 +60,6 @@ void setup() {
   }
   
   File flog = SD.open("uplog.txt", FILE_WRITE);
-
-  // Set all the values in the moving average to zero
-  memset(readings, 0, NUM_READINGS * sizeof(struct LSMData));
   
   initLSM();
   initMS5611();
@@ -74,22 +71,28 @@ void setup() {
   delay(10);
   readTempMS5611(&mdata);
 
-
-  pitch1.attach(6);
-  pitch2.attach(7);
-  yaw1.attach(10);
-  yaw2.attach(12);
-
   // Notify successful initialization of sensors
   blink(LED, 3, 100);
   digitalWrite(LED, HIGH);
   beep(BUZZER,660, 400);
   beep(BUZZER, 770, 400);
 
-  InitServo(pitch1);
-  InitServo(pitch2);
-  InitServo(yaw1);
-  InitServo(yaw2);
+  setupControls();
+}
+
+void setupControls() {
+  // Set all the values in the moving average to zero
+  memset(readings, 0, NUM_READINGS * sizeof(struct LSMData));
+
+  pitch1.attach(6);
+  pitch2.attach(7);
+  yaw1.attach(10);
+  yaw2.attach(12);
+
+  initServo(pitch1);
+  initServo(pitch2);
+  initServo(yaw1);
+  initServo(yaw2);
 
   // Notify successful initialization of servo positions
   beep(BUZZER, 1000, 1000);
@@ -99,15 +102,17 @@ void loop() {
   static float pitchArr[10], yawArr[10];
   static int controlCounter = 0;
   static struct LSMData ldata, prevData;
-  static bool launched;
   static float timer0, timer1, timerServo;
   float dt, pitch, yaw;
-  //float angle[3] = {0, 0, 0};
-  struct state state;
+  static struct state state;
+
+  // Start by priming the barometer because it requires a delay between priming and reading
   primePressureMS5611();
-  while (Serial.available()) {
+
+  // Read from the GPS if it has data available.
+  while (SerialGPS.available()) {
     // get the new byte:
-    char inChar = (char)Serial.read();
+    char inChar = (char)SerialGPS.read();
 
     if (inChar == '$') {
       GPSOutputPos = -1;
@@ -122,32 +127,24 @@ void loop() {
     }
   }
 
-  //SerialUSB.println("GPS");
   readLSM(&ldata);
-  //SerialUSB.println("LSM");
-  launched = launchDetect(&ldata, launched);
-  //if (millis() > 20000)
-  //{
-    //launched = true;
-  //}
-  state.launched = launched;
+
+  state.launched = state.launched || detectedLaunch(&ldata);
   timer0 = millis(); //time right before data processing
-  if (!launched)
+  if (!state.launched)
   {
-    //SerialUSB.println("Not Launched");
     // Do nothing
     sensorMovingAverage();
     for (int j = 0; j < 3; j++)
     {
       prevAngle[j] = state.angle[j];
-    }//memcpy(prevAngle, state.angle, 12);
+    }
     prevData = ldata;
   }
   else
   {
-    ApplyOffsets(&ldata);
+    applyGyroOffsets(&ldata, &offset);
     dt = (timer0 - timer1) / 1000;
-    //SerialUSB.println(dt);
     state.dt = dt;
     for (int j = 0; j < 3; j++)
     {
@@ -156,7 +153,7 @@ void loop() {
     for (int j = 0; j < 3; j++)
     {
       prevAngle[j] = state.angle[j];
-    }//memcpy(prevAngle, state.angle, 12);
+    }
     prevData = ldata; //set to keep previous data on next loop
 
   }
@@ -251,34 +248,6 @@ if (timer1 - timerServo > 100)
     //log.close();
   */
   delay(1);
-}
-float compFilter(float oldAngle, float gyroData, float accAng, float dt)
-{
-  return 0.99 * (oldAngle + gyroData * dt) + 0.01 * accAng;
-}
-
-void ApplyOffsets(struct LSMData *ldata)
-{
-  ldata->acc[0] = ldata->acc[0] - offset.acc[0];
-  ldata->acc[1] = ldata->acc[1] - offset.acc[1];
-  ldata->acc[2] = ldata->acc[2] - offset.acc[2];
-  ldata->gyr[0] = ldata->gyr[0] - offset.gyr[0];
-  ldata->gyr[1] = ldata->gyr[1] - offset.gyr[1];
-  ldata->gyr[2] = ldata->gyr[2] - offset.gyr[2];
-}
-
-bool launchDetect(struct LSMData *data, bool launched)
-{
-  if (data->acc[2] > 1.5 || launched) //TODO: Determine what is a reasonable value for this
-  {
-    //SerialUSB.println("Launch Detected");
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-
 }
 
 void sensorMovingAverage()
