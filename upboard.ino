@@ -58,8 +58,39 @@ void setup() {
     SerialXbee.println("SD ERROR");
     beep(BUZZER, 400, 2000);
   }
+
+  // Create Filename
+  char logNum[2];
+  char fileName[11];
+  for (int i = 1; i < 100; i++){ 
+    fileName[0] = '\0'; // clear array
+    logNum[0] = '\0';
+    if (i < 10) {
+      strcpy(fileName,"uplog");
+      strcat(fileName,"0");
+      itoa(i,logNum,10);
+      strcat(fileName,logNum);
+      strcat(fileName,".txt");
+    } 
+    else {
+      //Serial.println(String(i));
+      if (i > 99) {
+       SerialUSB.println("Card full or file error.");
+       //errorScream();
+      }
+      strcpy(fileName,"data");
+      //Serial.println(String(i));
+      itoa(i,logNum,10);
+      strcat(fileName,logNum);
+      strcat(fileName,".txt");
+      //Serial.println(fileName);
+    }
   
-  File flog = SD.open("uplog.txt", FILE_WRITE);
+    if (!SD.exists(fileName)){// If file does not exist
+      break; // This will be the fileName
+    } 
+
+  }
   
   initLSM();
   initMS5611();
@@ -238,14 +269,14 @@ if (timer1 - timerServo > 100)
   SerialUSB.print(state.angle[2]);
   SerialUSB.print("\t");
   SerialUSB.println(state.dt, 4);
-  /*ourlog = SD.open("uplog.txt", FILE_WRITE);
+  /*SD.open(fileName, FILE_WRITE);
     if(!ourlog) {
     SerialUSB.println("FILE ERROR");
     Serial1.println("FILE ERROR");
     }
 
     ourlog.println(out);
-    //log.close();
+    log.close();
   */
   delay(1);
 }
@@ -281,3 +312,4 @@ void sensorMovingAverage()
   }
   offset.acc[2] -= 1; //We should read 1 G in the z axis
 }
+ 
