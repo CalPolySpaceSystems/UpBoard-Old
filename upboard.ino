@@ -58,39 +58,8 @@ void setup() {
     SerialXbee.println("SD ERROR");
     beep(BUZZER, 400, 2000);
   }
-
-  // Create Filename
-  char logNum[2];
-  char fileName[11];
-  for (int i = 1; i < 100; i++){ 
-    fileName[0] = '\0'; // clear array
-    logNum[0] = '\0';
-    if (i < 10) {
-      strcpy(fileName,"uplog");
-      strcat(fileName,"0");
-      itoa(i,logNum,10);
-      strcat(fileName,logNum);
-      strcat(fileName,".txt");
-    } 
-    else {
-      //Serial.println(String(i));
-      if (i > 99) {
-       SerialUSB.println("Card full or file error.");
-       //errorScream();
-      }
-      strcpy(fileName,"data");
-      //Serial.println(String(i));
-      itoa(i,logNum,10);
-      strcat(fileName,logNum);
-      strcat(fileName,".txt");
-      //Serial.println(fileName);
-    }
   
-    if (!SD.exists(fileName)){// If file does not exist
-      break; // This will be the fileName
-    } 
-
-  }
+  File flog = SD.open("uplog.txt", FILE_WRITE);
   
   initLSM();
   initMS5611();
@@ -129,17 +98,7 @@ void setupControls() {
   beep(BUZZER, 1000, 1000);
 }
 
-void loop() {
-  static float pitchArr[10], yawArr[10];
-  static int controlCounter = 0;
-  static struct LSMData ldata, prevData;
-  static float timer0, timer1, timerServo;
-  float dt, pitch, yaw;
-  static struct state state;
-
-  // Start by priming the barometer because it requires a delay between priming and reading
-  primePressureMS5611();
-
+void readGPS() {
   // Read from the GPS if it has data available.
   while (SerialGPS.available()) {
     // get the new byte:
@@ -157,15 +116,28 @@ void loop() {
       }
     }
   }
+}
 
+void loop() {
+  static float pitchArr[10], yawArr[10];
+  static int controlCounter = 0;
+  static struct LSMData ldata, prevData;
+  static float timer0, timer1, timerServo;
+  float dt, pitch, yaw;
+  static struct state state;
+
+  // Start by priming the barometer because it requires a delay between priming and reading
+  primePressureMS5611();
+  readGPS();
   readLSM(&ldata);
 
   state.launched = state.launched || detectedLaunch(&ldata);
+
   timer0 = millis(); //time right before data processing
   if (!state.launched)
   {
     // Do nothing
-    sensorMovingAverage();
+    sensorMovingAverage(&ldata);
     for (int j = 0; j < 3; j++)
     {
       prevAngle[j] = state.angle[j];
@@ -224,15 +196,7 @@ if (timer1 - timerServo > 100)
   float pitchMicro2 = 1500 - 30*.707*pitch + 30*.707*yaw;
   float yawMicro1 = 1500 + 60*.707*yaw + 30*.707*pitch;
   float yawMicro2 = 1500 - 30*.707*yaw + 30*.707*pitch;
-//  pitch1.writeMicroseconds(pitchMicro1);
-//  pitch2.writeMicroseconds(pitchMicro2);
-//  yaw1.writeMicroseconds(yawMicro1);
-//  yaw2.writeMicroseconds(yawMicro2);
-  //  pitch1.write(pitch);
-  //  pitch2.write(-pitch);
-  //  yaw1.write(yaw);
-  //  yaw2.write(-yaw);
-  //SerialUSB.println(timer0-timer1, 4);
+
   timerServo = millis();
 }
   timer1 = timer0; //set to keep previous time on next loop
@@ -269,47 +233,46 @@ if (timer1 - timerServo > 100)
   SerialUSB.print(state.angle[2]);
   SerialUSB.print("\t");
   SerialUSB.println(state.dt, 4);
-  /*SD.open(fileName, FILE_WRITE);
+  /*ourlog = SD.open("uplog.txt", FILE_WRITE);
     if(!ourlog) {
     SerialUSB.println("FILE ERROR");
     Serial1.println("FILE ERROR");
     }
 
     ourlog.println(out);
-    log.close();
+    //log.close();
   */
   delay(1);
 }
 
-void sensorMovingAverage()
+/*
+ * Calculate the moving average of the 9-axis accelerometer and gyro.
+ * Keep a ring buffer of the last N loops and average it.
+ */
+void sensorMovingAverage(struct LSMData *ldata)
 {
   static struct LSMData total;
   static int i;
   /* Subtract the last reading of the current index*/
-  for (int j = 0; j < 3; j++)
-  {
+  for (int j = 0; j < 3; j++) {
     total.acc[j] -= readings[i].acc[j];
     total.gyr[j] -= readings[i].gyr[j];
   }
   /* Get new reading at current index */
-  readLSM(&readings[i]);
-  for (int j = 0; j < 3; j++)
-  {
+  readings[i] = *ldata;
+  for (int j = 0; j < 3; j++) {
     total.acc[j] += readings[i].acc[j];
     total.gyr[j] += readings[i].gyr[j];
   }
   i++;
   /* Reset array count if array is full */
-  if (i >= NUM_READINGS)
-  {
+  if (i >= NUM_READINGS) {
     i = 0;
   }
   /* Take the average of all the readings */
-  for (int j = 0; j < 3; j++)
-  {
+  for (int j = 0; j < 3; j++) {
     offset.acc[j] = total.acc[j] / NUM_READINGS;
     offset.gyr[j] = total.gyr[j] / NUM_READINGS;
   }
   offset.acc[2] -= 1; //We should read 1 G in the z axis
 }
- 
