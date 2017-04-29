@@ -1,4 +1,3 @@
-
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
@@ -7,6 +6,12 @@
 #include "barometer.h"
 #include "telemetry.h"
 #include "digital_io.h"
+
+
+// Functionality switches - Comment out to disable
+#define SD_CARD
+#define USB_TELEMETRY
+#define XBEE_TELEMETRY
 
 // Define digial pins
 #define BUZZER 3
@@ -42,7 +47,8 @@ void setup() {
   SerialGPS.begin(115200);
   
   Wire.begin();
-  
+
+#ifdef SD_CARD
   if(!SD.begin(SDSELECT)) {
     SerialUSB.println("SD ERROR");
     SerialXbee.println("SD ERROR");
@@ -67,6 +73,7 @@ void setup() {
       break;
     } 
   }
+#endif
   
   initLSM();
   initMS5611();
@@ -126,9 +133,17 @@ void loop() {
 
   char out[255] = "";
   createPacket(out, &ldata, &gdata, &mdata);
-  
-  SerialUSB.println(out);
 
+#ifdef USB_TELEMETRY
+  SerialUSB.println(out);
+#endif
+
+
+#ifdef XBEE_TELEMETRY
+  SerialXbee.println(out);
+#endif
+
+#ifdef SD_CARD
   File fLog = SD.open(fileName, FILE_WRITE);
   if(fLog) {
     fLog.println(out);
@@ -137,5 +152,6 @@ void loop() {
     SerialUSB.println("NO SD");
     SerialXbee.println("NO SD");
   }
+#endif
 }
 
