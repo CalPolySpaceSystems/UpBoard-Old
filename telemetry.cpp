@@ -2,13 +2,61 @@
 #include <string.h>
 #include "telemetry.h"
 
+#define QUEUE_LEN 255
+#define MSG_LEN 255
+
+static char queue[QUEUE_LEN][MSG_LEN];
+static int16_t outPos = -1;
+
+// inPos is the location on the queue where data will be placed.
+static uint16_t inPos = 0;
+
+// packet enqueue returns a pointer to a spot in the queue to store data
+char* packetEnqueue() {
+  uint8_t in = inPos;
+  inPos++;
+  if(inPos >= QUEUE_LEN) {
+    inPos = 0;
+  }
+
+  // overwrite the start of the queue when overflowing
+  if(in == outPos && inPos > outPos) {
+    outPos++;
+    if(outPos >= QUEUE_LEN) {
+      outPos = 0;
+    }
+  }
+
+  // handle start condition
+  if (outPos == -1) {
+    outPos = 0;
+  }
+
+  return queue[in];
+}
+
+char* packetDequeue() {
+  // return NULL if queue is empty
+  // if the two are equal, the queue is overflowing
+  if(outPos == inPos - 1) {
+    return NULL;
+  }
+
+  outPos++;
+  if(outPos >= QUEUE_LEN) {
+    outPos = 0;
+  }
+
+  return queue[outPos];
+}
+
 // fToA converts a float to a char array
 void fToA(char* out, float in) {
   char temp[32]; // TODO: figure out right length
   int32_t whole = (int32_t) in;    //truncate whole numbers
   int16_t frac =  (int16_t) ((float)(in - (float) whole)*10000); //remove whole part of flt and shift 5 places over
   if(frac < 0) {
-  frac *= -1;
+    frac *= -1;
   }
 
   itoa(whole, temp, 10);
