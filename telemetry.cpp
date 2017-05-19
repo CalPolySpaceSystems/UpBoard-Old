@@ -6,49 +6,38 @@
 #define MSG_LEN 255
 
 static char queue[QUEUE_LEN][MSG_LEN];
-static int16_t outPos = -1;
+static uint16_t len = 0;
+static uint16_t head = 0;
 
-// inPos is the location on the queue where data will be placed.
-static uint16_t inPos = 0;
+// C's % is remainder, so this adds modulo support
+static int mod(int a, int b) {
+    int r = a % b;
+    return r < 0 ? r + b : r;
+}
+
 
 // packet enqueue returns a pointer to a spot in the queue to store data
 char* packetEnqueue() {
-  uint8_t in = inPos;
-  inPos++;
-  if(inPos >= QUEUE_LEN) {
-    inPos = 0;
-  }
+  uint8_t pos = head;
+  head++;
+  head %= QUEUE_LEN;
 
-  // overwrite the start of the queue when overflowing
-  if(in == outPos && inPos > outPos) {
-    outPos++;
-    if(outPos >= QUEUE_LEN) {
-      outPos = 0;
-    }
-  }
+  if(len < QUEUE_LEN)
+    len++;
 
-  // handle start condition
-  if (outPos == -1) {
-    outPos = 0;
-  }
-
-  return queue[in];
+  return queue[pos];
 }
 
 char* packetDequeue() {
-  // return NULL if queue is empty
-  // if the two are equal, the queue is overflowing
-  if(outPos == inPos - 1) {
+  if(len == 0) {
     return NULL;
   }
 
-  outPos++;
-  if(outPos >= QUEUE_LEN) {
-    outPos = 0;
-  }
-
-  return queue[outPos];
+  char* out = queue[mod(head-len, QUEUE_LEN)];
+  len--;
+  return out;
 }
+
 
 // fToA converts a float to a char array
 void fToA(char* out, float in) {
