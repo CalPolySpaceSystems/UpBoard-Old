@@ -3,7 +3,9 @@
 
 #include <Arduino.h>
 
-void initAD7606(int SENSOR_CS,SENSOR_CONVST,SENSOR_RESET);
+void initAD7606(int csPin; int convstPin; int resetPin);
+
+uint16_t* readAD7Raw(void);
 
 float* readAD7Pressure(void); 
 

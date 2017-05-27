@@ -1,49 +1,59 @@
 ﻿/* Pressure Board Cpp File
 	
 */
-#include <arduino.h>
+#include <Arduino.h>
 #include <SPI.h>
 #include "AD7606Pressure.h"
 
+uint16_t rawADC[12];
+float pressureOut[6];
 
+int ad7_CS;
+int ad7_CVS;
+int ad7_RESET;
 
-void initAD7606(int csPin,convstPin,resetPin) {
+void initAD7606(int csPin; int convstPin; int resetPin) {
 
-	#define SENSOR_CS     csPin
-	#define SENSOR_CONVST convstPin
-	#define SENSOR_RESET  resetPin
+	ad7_CS = csPin;
+	ad7_CVS = convstPin;
+	ad7_RESET = resetPin;
 
-	pinMode(SENSOR_CS,OUTPUT);
-	pinMode(SENSOR_CONVST,OUTPUT);
-	pinMode(SENSOR_RESET, OUTPUT);
-	digitalWrite(SENSOR_CS,HIGH);
-	digitalWrite(SENSOR_CONVST,HIGH);
-	digitalWrite(SENSOR_RESET,HIGH);
+	pinMode(ad7_CS,OUTPUT);
+	pinMode(ad7_CVS,OUTPUT);
+	pinMode(ad7_RESET, OUTPUT);
+	digitalWrite(ad7_CS,HIGH);
+	digitalWrite(ad7_CVS,HIGH);
+	digitalWrite(ad7_RESET,HIGH);
 	delay(1);
-	digitalWrite(SENSOR_RESET,LOW);
+	digitalWrite(ad7_RESET,LOW);
 
 }
 
 
-
-float* readAD7Pressure(){
-	uint16_t rawADC[12];
-	float pressureOut[6];
-
+uint16_t* readAD7Raw(){
+	
 	// Start the cycle of
-	digitalWrite(SENSOR_CONVST,LOW);
+	digitalWrite(ad7_CVS,LOW);
 	delayMicroseconds(2);
-	digitalWrite(SENSOR_CONVST,HIGH);
+	digitalWrite(ad7_CVS,HIGH);
 	delayMicroseconds(12);
 
 	SPI.beginTransaction(SPISettings(8000000,MSBFIRST,SPI_MODE3));
-	digitalWrite(SENSOR_CS,LOW);  
+	digitalWrite(ad7_CS,LOW);
 
 	for (int i = 0;i<12;i++){
 		rawADC[i] = (uint16_t)SPI.transfer(0x00);
 	}
-	digitalWrite(SENSOR_CS,HIGH);
+	digitalWrite(ad7_CS,HIGH);
 	SPI.endTransaction();
+	
+	return rawADC;
+}
+
+
+float* readAD7Pressure(){
+
+	rawADC = readAD7Raw();
 
 	// Convert readings to KPa, store in array
 	for (int j=0, i = 0;j<12;j += 2, i++){
