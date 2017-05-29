@@ -1,18 +1,17 @@
-﻿/* Pressure Board Cpp File
-	
+﻿﻿/* 
+	Pressure Board C++ File
+	Written by Patrick Chizek
+	5/2017
 */
 #include <Arduino.h>
 #include <SPI.h>
 #include "AD7606Pressure.h"
 
-uint16_t rawADC[12];
-float pressureOut[6];
-
 int ad7_CS;
 int ad7_CVS;
 int ad7_RESET;
 
-void initAD7606(int csPin; int convstPin; int resetPin) {
+void initAD7606(int csPin, int convstPin, int resetPin) {
 
 	ad7_CS = csPin;
 	ad7_CVS = convstPin;
@@ -30,7 +29,7 @@ void initAD7606(int csPin; int convstPin; int resetPin) {
 }
 
 
-uint16_t* readAD7Raw(){
+uint16_t readAD7Raw(uint16_t rawADC[12]){
 	
 	// Start the cycle of
 	digitalWrite(ad7_CVS,LOW);
@@ -47,21 +46,18 @@ uint16_t* readAD7Raw(){
 	digitalWrite(ad7_CS,HIGH);
 	SPI.endTransaction();
 	
-	return rawADC;
 }
 
 
-float* readAD7Pressure(){
+float readAD7Pressure(float pressureOut[6]){
 
-	rawADC = readAD7Raw();
+  uint16_t rawADC[12];
+	readAD7Raw(rawADC);
 
+  //float pressureOut[6];
 	// Convert readings to KPa, store in array
 	for (int j=0, i = 0;j<12;j += 2, i++){
 		pressureOut[i] = (((5.0*((rawADC[j] << 8) | (rawADC[j+1])))/(32768.0))+0.0421)/(0.012105);
 	}
 
-	return pressureOut;
 }
-
-
-
