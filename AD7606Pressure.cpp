@@ -29,7 +29,7 @@ void initAD7606(int csPin, int convstPin, int resetPin) {
 }
 
 
-uint16_t readAD7Raw(uint16_t rawADC[12]){
+void readAD7Raw(uint16_t *rawADC){
 	
 	// Start the cycle of
 	digitalWrite(ad7_CVS,LOW);
@@ -49,12 +49,11 @@ uint16_t readAD7Raw(uint16_t rawADC[12]){
 }
 
 
-float readAD7Pressure(float pressureOut[6]){
+void readAD7Pressure(float *pressureOut){
 
-  uint16_t rawADC[12];
+	uint16_t rawADC[12];
 	readAD7Raw(rawADC);
-
-  //float pressureOut[6];
+	
 	// Convert readings to KPa, store in array
 	for (int j=0, i = 0;j<12;j += 2, i++){
 		pressureOut[i] = (((5.0*((rawADC[j] << 8) | (rawADC[j+1])))/(32768.0))+0.0421)/(0.012105);
