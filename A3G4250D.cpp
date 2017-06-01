@@ -5,6 +5,10 @@
 */
 #include <Arduino.h>
 #include <math.h>
+#include <Wire.h>
+
+//Device Address
+#define A3G_DEVICE_ADD (0b1101001)
 
 //CTRL Reg Addresses
 #define A3G_CTRL_REG1		0x20
@@ -16,19 +20,19 @@
 
 // Other registers
 #define A3G_OUT_TEMP		0x26
-#define A3G_STATUS_REG		0x27
+#define A3G_STATUS_REG	0x27
 #define A3G_OUT_START		0x28
 
 // Registers to find
 #define STAT_ZYXOR			0x80
 #define STAT_ZYXDA			0x08
 
-void readRawA3G(int16_t *rawA3G);{
+void readRawA3G(int16_t *rawA3G){
 	
 	for (byte i=0;i<3;i++){
 
 		Wire.beginTransmission(A3G_DEVICE_ADD);
-		Wire.write(A3G_OUT_START + i);
+		Wire.write(A3G_OUT_START + 2*i + 1);
 		Wire.endTransmission(false);
 		
 		Wire.requestFrom(A3G_DEVICE_ADD,1,true);
@@ -37,7 +41,7 @@ void readRawA3G(int16_t *rawA3G);{
 		rawA3G[i] = (Wire.read()<< 8);
 
 		Wire.beginTransmission(A3G_DEVICE_ADD);
-		Wire.write(A3G_OUT_START + 1 + i);
+		Wire.write(A3G_OUT_START +  2*i);
 		Wire.endTransmission(false);
 				
 		Wire.requestFrom(A3G_DEVICE_ADD,1,true);
@@ -65,7 +69,7 @@ void readFixIntA3G(int16_t *fpA3G){
 	readRawA3G(raw);
 
 	for (int i=0;i<3;i++){
-		outA3G[i] = round(raw[i] * 0.7477);
+		fpA3G[i] = round(raw[i] * 0.7477);
 	}
 
 }
