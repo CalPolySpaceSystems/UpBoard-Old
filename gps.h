@@ -14,6 +14,8 @@ struct GPSData {
   float time;
 };
 
+/* Setup GPS message configuration, modify in gps.cpp */
+int setupGPSNMEAStrings(HardwareSerial *gps_port, HardwareSerial *debug_port);
 
 void processGPS(uint8_t *in, struct GPSData *out);
 String gpsToString(struct GPSData *data);
