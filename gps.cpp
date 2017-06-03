@@ -65,7 +65,7 @@ void processGPS(uint8_t *in, struct GPSData *out) {
   }
 }
 
-// Returns a string intended for debug logging GPS data;
+/* Returns a string intended for debug logging GPS data */
 String gpsToString(struct GPSData *data) {
   String out = "Time";
   out += String(data->time);
@@ -79,17 +79,26 @@ String gpsToString(struct GPSData *data) {
   return out;
 }
 
+/* Write out configuration messages to the GPS serial line */
 int setupGPSNMEAStrings(HardwareSerial *gps_port, HardwareSerial *debug_port) {
    /* wait for port to respond */
-   uint8_t **ptr = config;
 
    debug_port->print("Waiting for GPS..."); 
    while (gps_port->available() < 1);
 
-   while ((*ptr)) {
-      gps_port->write(*ptr, 16);    /* iteratively write out config bytes */
+   while ((config[i])) {
+      gps_port->write(config[i++], 16);    /* iteratively write out config bytes */
       delay(10);                    /* delay because we can */ 
-      ptr++;                        /* prepare next configuration array */
    }
+   flushGPS(gps_port);
    return 1;
+}
+
+/* Flush GPS input buffer */
+void flushGPS(HardwareSerial *gps_port) {
+   char c;
+   while(gps_port->available()) {
+      c = gps_port->read();
+   }
+   return;
 }
