@@ -1,8 +1,4 @@
-﻿/*	
-	CPSS 3DOF Library
-	Written by Patrick Chizek
-	5/2017
-*/
+
 #include <Arduino.h>
 #include <math.h>
 #include <Wire.h>
