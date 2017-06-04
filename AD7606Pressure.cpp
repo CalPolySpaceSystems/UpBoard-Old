@@ -1,8 +1,4 @@
-﻿﻿/* 
-	Pressure Board C++ File
-	Written by Patrick Chizek
-	5/2017
-*/
+
 #include <Arduino.h>
 #include <SPI.h>
 #include "AD7606Pressure.h"
