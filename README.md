@@ -21,3 +21,7 @@ $ export ARDMK_DIR=/usr/share/arduino
 $ make
 $ make upload
 ```
+
+#### Required External Libraries
+To use interrupt based I/O you must install ASFcore and Adafruit_ZeroTimer
+
