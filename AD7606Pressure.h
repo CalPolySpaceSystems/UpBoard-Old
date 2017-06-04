@@ -12,6 +12,6 @@ void initAD7606(int csPin, int convstPin, int resetPin);
 
 void readAD7Raw(uint16_t *rawADC);
 
-void readAD7Pressure(float *pressureOut]);
+void readAD7Pressure(float *pressureOut);
 
 #endif
