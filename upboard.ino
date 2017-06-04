@@ -3,7 +3,11 @@
 #include <SD.h>
 #include <Servo.h>
 #include "lsm9ds1.h"
+#include "A3G4250D.h"
+#include "AD7606Pressure.h"
 #include "barometer.h"
+#include "CircBuffer.h"
+#include "avdweb_SAMDtimer.h"
 #include "telemetry.h"
 #include "digital_io.h"
 
@@ -15,8 +19,11 @@
 
 // Define digial pins
 #define BUZZER 3
-#define LED 4
+#define LED 13
 #define SDSELECT 8
+#define AD7606_CS 4
+#define AD7606_CONVST 11
+#define AD7606_RESET 9
 
 #define FILEPREFIX "updata"
 
@@ -76,6 +83,7 @@ void setup() {
 #endif
   
   initLSM();
+  initA3G();
   initMS5611();
   
   // Read temperature requires piriming, delaying, and then reading.
@@ -84,6 +92,8 @@ void setup() {
   primeTempMS5611();
   delay(10);
   readTempMS5611(&mdata);
+
+  initAD7606(AD7606_CS, AD7606_CONVST,AD7606_RESET);
 
   // Notify successful initialization of sensors
   blink(LED, 3, 100);
@@ -113,14 +123,17 @@ void readGPS() {
 }
 
 void loop() {
-  struct LSMData ldata;
+  struct  LSMData ldata;
+  float   A3GData;
+  int16_t pressData;
   static uint32_t lastBaroRead;
 
   // Start by priming the barometer because it requires a delay between priming and reading
   primePressureMS5611();
   readGPS();
   readLSM(&ldata);
-
+  readA3G(A3GData);
+ 
   if ((millis() - lastBaroRead) > 10) {
     readPressureMS5611(&mdata); // Take a baro reading 
     mdata.temperature = ldata.temp; // Update temperature
@@ -131,8 +144,10 @@ void loop() {
     lastBaroRead = millis();
   }
 
+  readAD7Raw(pressureData);
+
   char out[255] = "";
-  createPacket(out, &ldata, &gdata, &mdata);
+  createPacket(out, &ldata, &gdata, &mdata); // MAKE SURE TO UPDATE THIS
 
 #ifdef USB_TELEMETRY
   SerialUSB.println(out);
