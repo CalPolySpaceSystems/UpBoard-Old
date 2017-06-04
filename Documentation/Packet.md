@@ -4,7 +4,7 @@ These telemetry packets are used to communicate rocket status with the ground st
 
 There are several components that make up a complete packet:
 
-`C<rtc><time><gps><acc><gryo><baro><pres>*<CS>`
+`C<rtc 40:39><time 38:35><gps 34:27><acc 26:24><gryo 23:21><mag 20:18><baro 17:14><pres 13:2>*<CS 0>`
 
 #### Header
 
@@ -22,30 +22,60 @@ Type: unsigned 16 bit integer
 
 Time stores the time from the GPS
 
-`<hour11:8><minutes 7:4><seconds 3:0><fractions ?>`
+`<time 31:0>`
 
-TODO: precision of fraction
+It is an unsigned 32 bit integer of the format `HHMMSSss`, where `H` is the hour,
+`M` is the minute, `S` is the second, and `s` is the fraction of a second.
 
 #### GPS
 
 GPS stores data from GPS output
 
-`<lat 31:16><long 16:0>`
+`<lat 63:32><long 31:0>`
 
-time is the time mentioned below
+The format is a signed 32 bit integer of the format `-DDDMMmm`, where `D` is degree,
+`M` is minutes, and `m` is fraction of a minute.
 
-lat and long represent the latitude and longitude of the GPS
+#### Accelerometer
 
-TODO: Fixed point precision?
-
-#### Gyro
-
-Gyro stores 9-axis gyro measurements
+Accelerometer stores 9-axis measurements.
 
 `<x 47:32><y 31:16><z 15:0>`
 
-Type: Signed fixed point integer - 12/4
+Type: Signed fixed point 16 bit integer - 6/10
+Units: g
 
+#### Gyro
+
+Gyro stores 9-axis gyro measurements.
+
+`<x 47:32><y 31:16><z 15:0>`
+
+Type: Signed fixed point 16 bit integer - 12/4
+Units: degrees per seconds
+
+#### Magnetometer
+
+Magnetometer stores 9-axis measurements.
+
+`<x 47:32><y 31:16><z 15:0>`
+
+Type: Signed fixed point 16 bit integer - 4/12
+Units: gauss
+
+#### Barometer
+
+The barometer stores pressure and altitude data.
+
+`<pres 31:16><alt 15:0>`
+
+Types:
+- Altitude: unsigned fixed point 16 bit integer - 14/2
+- Pressure: unsigned fixed point 16 bit integer - 8/8
+
+Units:
+- Altitude: meters above sea level
+- Pressure: millibar
 
 #### Pressure Tap
 
