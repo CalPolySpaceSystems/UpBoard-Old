@@ -1,7 +1,6 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
-#include <Servo.h>
 #include "lsm9ds1.h"
 #include "barometer.h"
 #include "telemetry.h"
@@ -25,8 +24,8 @@
 #define SerialGPS Serial
 
 // Sensor State
-uint8_t GPSOutput[48];
-int GPSOutputPos = -2;
+char GPSOutput[64];
+int GPSOutputPos = -1;
 struct GPSData gdata;
 struct MS5611data mdata;
 struct LSMData offset;
@@ -96,18 +95,20 @@ void readGPS() {
   // Read from the GPS if it has data available.
   while (SerialGPS.available()) {
     // get the new byte:
-    char inChar = (char)SerialGPS.read();
+    char inChar = SerialGPS.read();
 
     if (inChar == '$') {
-      GPSOutputPos = -1;
-    } else if (GPSOutputPos > -2) {
-      GPSOutputPos++;
-      GPSOutput[GPSOutputPos] = inChar;
+      GPSOutputPos = 0;
+    } else if (GPSOutputPos > -1) {
       // End of message, process and reset to start
-      if (GPSOutputPos > 46) {
+      if(inChar == '*') {
         processGPS(GPSOutput, &gdata);
-        GPSOutputPos = -2;
+        GPSOutputPos = -1;
+        return;
       }
+
+      GPSOutput[GPSOutputPos] = inChar;
+      GPSOutputPos++;
     }
   }
 }

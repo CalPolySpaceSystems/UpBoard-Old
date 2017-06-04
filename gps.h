@@ -17,6 +17,6 @@ struct GPSData {
 /* Setup GPS message configuration, modify in gps.cpp */
 int setupGPSNMEAStrings(Stream *gps_port, Stream *debug_port);
 void flushGPS(Stream *gps_port);
-void processGPS(uint8_t *in, struct GPSData *out);
+int processGPS(char *in, struct GPSData *out);
 String gpsToString(struct GPSData *data);
 #endif
