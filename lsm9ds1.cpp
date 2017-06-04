@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include "lsm9ds1.h"
 
-#define LSM_ADR (0B1101011)
+#define LSM_AG_ADR (0B1101011)
 #define LSM_MAG_ADR (0B0011110)
 
 #define LSM_CTRL_REG4    (0b00011110)
@@ -29,8 +29,8 @@ static void writeRegister(uint8_t dev, uint8_t reg, uint8_t value) {
   Wire.endTransmission();
 }
 
-static void readRegister(uint8_t dev, uint8_t startReg, uint8_t len, int8_t *data) {
-  Wire.beginTransmission(LSM_ADR);
+static void readRegister(uint8_t dev, uint8_t startReg, uint8_t len, byte *data) {
+  Wire.beginTransmission(dev);
   Wire.write(startReg);
   Wire.endTransmission();
 
@@ -47,10 +47,10 @@ static void readRegister(uint8_t dev, uint8_t startReg, uint8_t len, int8_t *dat
 
 // Initializes LSM by setting registers to desired values
 void initLSM(){
-  writeRegister(LSM_ADR, LSM_CTRL_REG4, 0b00111000);       //enable gyro
-  writeRegister(LSM_ADR, LSM_CTRL_REG5_XL,0b00111000);     //enable accelerometer
-  writeRegister(LSM_ADR, LSM_CTRL_REG6_XL, 0b00001000);    //set accelerometer scale to 16Gs
-  writeRegister(LSM_ADR, LSM_CTRL_REG1_G, 0b01000000);     //gyro/accel odr and bw
+  writeRegister(LSM_AG_ADR, LSM_CTRL_REG4, 0b00111000);       //enable gyro
+  writeRegister(LSM_AG_ADR, LSM_CTRL_REG5_XL,0b00111000);     //enable accelerometer
+  writeRegister(LSM_AG_ADR, LSM_CTRL_REG6_XL, 0b00001000);    //set accelerometer scale to 16Gs
+  writeRegister(LSM_AG_ADR, LSM_CTRL_REG1_G, 0b01000000);     //gyro/accel odr and bw
   writeRegister(LSM_MAG_ADR, LSM_CTRL_REG2_M, 0b00100000); //set mag sensitivity to 8 gauss
   writeRegister(LSM_MAG_ADR, LSM_CTRL_REG3_M, 0b00000000); //enable mag continuous
 }
@@ -58,41 +58,41 @@ void initLSM(){
 
 // Writes new data to lsm struct
 void readLSM(struct LSMData *out){
-  int8_t gyro[6];
-  readRegister(LSM_ADR, LSM_GYRO_START, 6, gyro);
+  byte gyro[6];
+  readRegister(LSM_AG_ADR, LSM_GYRO_START, 6, gyro);
 
   for(int i = 0; i < 3; i++) {
     int16_t gyr = gyro[2*i+1];
     gyr = gyr << 8;
-    gyr |= (uint16_t) gyro[2*i];
+    gyr |= gyro[2*i];
     out->gyr[i] = (float) gyr * LSM_GYRO_FACT;
   }
 
-  int8_t accel[6];
-  readRegister(LSM_ADR, LSM_ACC_START, 6, accel);
+  byte accel[6];
+  readRegister(LSM_AG_ADR, LSM_ACC_START, 6, accel);
 
   for(int i = 0; i < 3; i++) {
     int16_t acc = accel[2*i+1];
     acc = acc << 8;
-    acc |= (uint16_t) accel[2*i];
+    acc |= accel[2*i];
     out->acc[i] = (float) acc * LSM_ACC_FACT;
   }
 
-  int8_t mag[6];
+  byte mag[6];
   readRegister(LSM_MAG_ADR, LSM_MAG_START, 6, mag);
 
   for(int i = 0; i < 3; i++) {
     int16_t mg = mag[2*i+1];
     mg = mg << 8;
-    mg |= (uint16_t) mag[2*i];
+    mg |= mag[2*i];
     out->mag[i] = (float) mg * LSM_MAG_FACT;
   }
 
-  int8_t temp[2];
-  readRegister(LSM_ADR, LSM_TS_START, 2, temp);
+  byte temp[2];
+  readRegister(LSM_AG_ADR, LSM_TS_START, 2, temp);
   int16_t tmp = temp[1];
   tmp = tmp << 8;
-  tmp |= (uint16_t) temp[0];
+  tmp |= temp[0];
   out->temp = ((float) tmp/16) + 25;
 }
 
