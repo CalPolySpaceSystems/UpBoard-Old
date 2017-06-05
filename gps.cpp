@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include "gps.h"
 
+#define NEMA_SEPERATOR ","
+#define NMEA_MSG "GNGLL"
+
 /* define NMEA configuration arrays */
 /* first bit is length of array */
 static uint8_t GGA_OFF[] = {16, 0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x00,
@@ -13,57 +16,81 @@ static uint8_t RMC_OFF[] = {16, 0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x04, 
    0x00, 0x00, 0x00, 0x03, 0x3F};
 static uint8_t VTG_OFF[] = {16, 0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x05, 0x00, 0x00, 0x00,
    0x00, 0x00, 0x00, 0x04, 0x46};
-static uint8_t GRS_OFF[] = {16, 0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x06, 0x00, 0x00, 0x00, 
+static uint8_t GRS_OFF[] = {16, 0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x06, 0x00, 0x00, 0x00,
    0x00, 0x00, 0x00, 0x05, 0x4D};
-static uint8_t TRS_10[] = {14, 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0x64, 0x00, 0x01, 0x00, 0x01, 
+static uint8_t TRS_10[] = {14, 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0x64, 0x00, 0x01, 0x00, 0x01,
    0x00, 0x7A, 0x12};
 
 static uint8_t *config[8] = {GGA_OFF, GSA_OFF, GSV_OFF, RMC_OFF, VTG_OFF, GRS_OFF, TRS_10, NULL};
 
+// strtok_single behaves like strtok but doesn't treat multiple tokens as one delimiter
+static char * strtok_single (char * str, char const * delims) {
+  static char  * src = NULL;
+  char  *  p,  * ret = 0;
 
-// processGPS converts a GPGLL  sentance into GPSData struct. Example sentance:
-// GPGLL,0000.0000,N,00000.0000,E,193602.000,V,N*4E
-// Only works with 48 charecter long GPGLL sentances for now
-void processGPS(uint8_t *in, struct GPSData *out) {
-  char lat[10];
-  char lng[10];
-  char time[11];
+  if (str != NULL)
+    src = str;
 
-  if((char) in[42] != 'A') {
-    out->valid = false;
-  } else {
-    out->valid = true;
+  if (src == NULL)
+    return NULL;
+
+  if ((p = strpbrk (src, delims)) != NULL) {
+    *p  = 0;
+    ret = src;
+    src = ++p;
+
+  } else if (*src) {
+    ret = src;
+    src = NULL;
   }
 
-  for(int i = 0; i < 9; i++) {
-    lat[i] = in[6+i];
-  }
-  // null terminate string
-  lat[9] = '\0';
+  return ret;
+}
 
-  for(int i = 0; i < 9; i++) {
-    lng[i] = in[18+i];
-  }
-  // null terminate string
-  lng[9] = '\0';
+// Process GPS parses a GPS Sentence to extract location information
+// Example sentences (with starting $ and * stripped out by preparser)
+// GNGLL,,,,,224439.00,V,N
+// GNGLL,3518.33426,N,12039.89241,W,224513.00,A,A
+int processGPS(char *in, struct GPSData *out) {
+  char *token = NULL;
 
-  for(int i = 0; i < 10; i++) {
-    time[i] = in[31+i];
-  }
-  // null terminate string
-  time[10] = '\0';
+  token = strtok_single(in, NEMA_SEPERATOR);
+  if(token == NULL)
+    return 1;
 
-  out->lat = (float) atof(lat);
-  out->lng = (float) atof(lng);
-  out->time = (float) atof(time);
+  // Discard unwanted NEMA messages
+  if(token != NULL && strcmp(token, NMEA_MSG))
+    return 1;
 
-  if((char) in[16] != 'N') {
+  // Parse latitude
+  token = strtok_single(NULL, NEMA_SEPERATOR);
+  out->lat = (float) atof(token);
+
+  // Parse hemisphere of message, if not N, assume southern hemisphere
+  token = strtok_single(NULL, NEMA_SEPERATOR);
+  if(token != NULL && strcmp(token, "N"))
     out->lat *= -1;
-  }
 
-  if((char) in[29] != 'E') {
+  // Parse longitude
+  token = strtok_single(NULL, NEMA_SEPERATOR);
+  out->lng = (float) atof(token);
+
+  // Parse hemisphere of message, if not E, assume western hemisphere
+  token = strtok_single(NULL, NEMA_SEPERATOR);
+  if(token != NULL && strcmp(token, "E"))
     out->lng *= -1;
-  }
+
+  // Parse time
+  token = strtok_single(NULL, NEMA_SEPERATOR);
+  out->time = (float) atof(token);
+
+  // Parse fix status
+  out->valid = false;
+  token = strtok_single(NULL, NEMA_SEPERATOR);
+  if(token != NULL && !strcmp(token, "A"))
+    out->valid = true;
+
+  return 0;
 }
 
 /* Returns a string intended for debug logging GPS data */
@@ -85,7 +112,7 @@ int setupGPSNMEAStrings(Stream *gps_port, Stream *debug_port) {
    /* wait for port to respond */
    int i = 0, j = 0;
    int arr_length;
-   debug_port->print("Waiting for GPS..."); 
+   debug_port->print("Waiting for GPS...");
    while (gps_port->available() < 1);
 
    while ((config[i])) {
@@ -93,7 +120,7 @@ int setupGPSNMEAStrings(Stream *gps_port, Stream *debug_port) {
       for(j = 1; j <= arr_length; j++) {
         gps_port->write(config[i][j]);
       }
-      delay(10);                    /* delay because we can */ 
+      delay(10);                    /* delay because we can */
       i++;
    }
    flushGPS(gps_port);
