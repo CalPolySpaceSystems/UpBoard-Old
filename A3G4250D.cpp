@@ -28,6 +28,13 @@
 #define STAT_ZYXOR			0x80
 #define STAT_ZYXDA			0x08
 
+void writeReg(byte deviceAddress, byte targetRegister, byte newValue){
+  Wire.beginTransmission(deviceAddress);
+  Wire.write(targetRegister);
+  Wire.write(newValue);
+  Wire.endTransmission();
+}
+
 void initA3G(){
   writeReg(A3G_CTRL_REG1,0b00001111,A3G_DEVICE_ADD); // Enable all Gyro axes, Set Bandwidth
   writeReg(A3G_CTRL_REG2,0b00000011,A3G_DEVICE_ADD); // High Pass filter settings
@@ -79,13 +86,6 @@ void readFixIntA3G(int16_t *fpA3G){
 		fpA3G[i] = round(raw[i] * 0.7477);
 	}
 
-}
-
-void writeReg(byte deviceAddress, byte targetRegister, byte newValue){
-	Wire.beginTransmission(deviceAddress);
-	Wire.write(targetRegister);
-	Wire.write(newValue);
-	Wire.endTransmission();
 }
 
 bool checkReg(byte deviceAddress, byte targetRegister, byte expectedValue){

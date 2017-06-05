@@ -7,5 +7,6 @@
 #include "barometer.h"
 
 int createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struct MS5611data *mdata);
+void sendTelemetry(Stream *s, int amount);
 #endif
 

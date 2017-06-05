@@ -44,6 +44,30 @@ char* packetDequeue() {
   return out;
 }
 
+
+void sendTelemetry(Stream *s, int amount) {
+  static struct {
+    int pos;
+    int len;
+    char msg[MSG_LEN];
+  } pack;
+
+  while(amount > 0) {
+    // if the current packet is empty, load a new one
+    if(pack.pos >= pack.len) {
+      const char* newPacket = packetDequeue();
+      if(newPacket == NULL)
+        break;
+      strcpy(pack.msg, newPacket);
+      pack.pos = 0;
+      pack.len = MSG_LEN; // TODO: Add smarter length detection
+    }
+
+    s->write(pack.msg[pack.pos++]);
+    amount--;
+  }
+}
+
 // createPacket generates a telemetry packet. See documentation for the format.
 int createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struct MS5611data *mdata) {
   int pos = 0;
@@ -159,6 +183,10 @@ int createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struct
   }
 
   out[pos++] = checksum;
+
+  // NOTE(Joshua): IF YOU CHANGE THIS, YOU MUST UPDATE MSG_LEN
+  // Telemetry packets currently are hard coded to this length. It needs to be redesigned in the future.
+  // Since binary packets can have \0 in them, we can no longer simply use strlen to determine length.
 
   return pos;
 }
