@@ -4,7 +4,7 @@ These telemetry packets are used to communicate rocket status with the ground st
 
 There are several components that make up a complete packet:
 
-`C<rtc 40:39><time 38:35><gps 34:27><acc 26:24><gryo 23:21><mag 20:18><baro 17:14><pres 13:2>*<CS 0>`
+`C<rtc 42:41><time 40:37><gps 36:29><temp 28:17><acc 26:24><gryo 23:21><mag 20:18><baro 17:14><pres 13:2>*<CS 0>`
 
 #### Header
 
@@ -33,8 +33,17 @@ GPS stores data from GPS output
 
 `<lat 63:32><long 31:0>`
 
-The format is a signed 32 bit integer of the format `-DDDMMmm`, where `D` is degree,
+The format is a unsigned 32 bit integer of the format `-DDDMMmmmmm`, where `D` is degree,
 `M` is minutes, and `m` is fraction of a minute.
+
+#### Temperature
+
+The temperature from the 9-axis.
+
+`<temp 15:0>`
+
+Type: Signed fixed point 16 bit integer - 12/4
+Units: Celsius
 
 #### Accelerometer
 

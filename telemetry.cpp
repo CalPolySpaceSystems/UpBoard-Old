@@ -5,6 +5,12 @@
 #define QUEUE_LEN 255
 #define MSG_LEN 255
 
+#define FIXED_PT_4_12 4096
+#define FIXED_PT_6_10 1024
+#define FIXED_PT_8_8 256
+#define FIXED_PT_12_4 16
+#define FIXED_PT_14_2 4
+
 static char queue[QUEUE_LEN][MSG_LEN];
 static uint16_t len = 0;
 static uint16_t head = 0;
@@ -38,161 +44,121 @@ char* packetDequeue() {
   return out;
 }
 
+// createPacket generates a telemetry packet. See documentation for the format.
+int createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struct MS5611data *mdata) {
+  int pos = 0;
+  // Header
+  out[pos++] = 'C';
 
-// fToA converts a float to a char array
-void fToA(char* out, float in) {
-  char temp[32]; // TODO: figure out right length
-  int32_t whole = (int32_t) in;    //truncate whole numbers
-  int16_t frac =  (int16_t) ((float)(in - (float) whole)*10000); //remove whole part of flt and shift 5 places over
-  if(frac < 0) {
-    frac *= -1;
+  // RTC
+  union {
+    uint16_t i;
+    char c[2];
+  } rtc;
+  rtc.i = 1234;
+  for(int i = sizeof(rtc.c)-1; i > -1; i--)
+    out[pos++] = rtc.c[i];
+
+  // Time
+  union {
+    uint32_t i;
+    char c[4];
+  } time;
+  time.i = (uint32_t) (gdata->time*100+0.5);
+  for(int i = sizeof(time.c)-1; i > -1; i--)
+    out[pos++] = time.c[i];
+
+  // Latitude
+  union {
+    uint32_t i;
+    char c[4];
+  } lat;
+  lat.i = (uint32_t) (fabs(gdata->lat)*100000+0.5);
+  for(int i = sizeof(lat.c)-1; i > -1; i--)
+    out[pos++] = lat.c[i];
+
+  // Longitude
+  union {
+    uint32_t i;
+    char c[4];
+  } lng;
+  lng.i = (uint32_t) (fabs(gdata->lng)*100000+0.5);
+  for(int i = sizeof(lng.c)-1; i > -1; i--)
+    out[pos++] = lng.c[i];
+
+  // Temperature
+  union {
+    uint16_t i;
+    char c[2];
+  } temp;
+  temp.i = (uint16_t) (ldata->temp * FIXED_PT_12_4);
+  for(int i = sizeof(temp.c)-1; i > -1; i--)
+    out[pos++] = temp.c[i];
+
+  // Accelerometer
+  for(int i = 0; i < 3; i++) {
+    union {
+      uint16_t i;
+      char c[2];
+    } acc;
+    acc.i = (uint16_t) (ldata->acc[i] * FIXED_PT_6_10);
+    for(int j = sizeof(acc.c)-1; j > -1; j--)
+      out[pos++] = acc.c[j];
   }
 
-  itoa(whole, temp, 10);
-  strcat(out, temp);
-  strcat(out, ".");
-  itoa(frac, temp, 10);
-  strcat(out, temp);
-}
-
-// createPacket generates a telemetry packet.
-// LEN includes every charecter up to the start of length.
-// Format $CPSS,TIME,MILLI,LAT,LNG,GPSVALID,ALT,PRESSURE,MS5_TEMP,ACC_X,ACC_Y,ACC_Z,GYR_X,GYR_Y,GYR_Z,MAG_X,MAG_Y,MAG_Z,LMS_TEMP;LEN,CHECKSUM*
-// Example packet: $1928.3746,1234.5677,9876.5429,0,5678.9013,50.6780,10.5677,-4.0,5.6700,6.2300,34.0,3.4500,67.8899,54.0,3.7500,53.8899,-110.9000;128,84
-void createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struct MS5611data *mdata) {
-  // set header and initial null byte
-  out[0] = '$';
-  out[1] = '\0';
-
-  strcat(out, "CPSS,");
-
-  // time
-  char tmp[32] = "";
-  fToA(tmp, gdata->time);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // milliseconds since startup
-  tmp[0] = '\0';
-  itoa(millis(), tmp, 10);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // lat
-  tmp[0] = '\0';
-  fToA(tmp, gdata->lat);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // lng
-  tmp[0] = '\0';
-  fToA(tmp, gdata->lng);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // gps valid
-  if(gdata->valid)
-  strcat(out, "1");
-  else
-  strcat(out, "0");
-  strcat(out, ",");
-
-  // alt
-  tmp[0] = '\0';
-  fToA(tmp, mdata->altitude);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // pressure
-  tmp[0] = '\0';
-  fToA(tmp, mdata->pressure);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // barometer temperature
-  tmp[0] = '\0';
-  fToA(tmp, mdata->temperature);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // accelerometer x
-  tmp[0] = '\0';
-  fToA(tmp, ldata->acc[0]);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // accelerometer y
-  tmp[0] = '\0';
-  fToA(tmp, ldata->acc[1]);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // accelerometer z
-  tmp[0] = '\0';
-  fToA(tmp, ldata->acc[2]);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // gyro x
-  tmp[0] = '\0';
-  fToA(tmp, ldata->gyr[0]);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // gyro y
-  tmp[0] = '\0';
-  fToA(tmp, ldata->gyr[1]);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // gyro z
-  tmp[0] = '\0';
-  fToA(tmp, ldata->gyr[2]);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // magnetometer x
-  tmp[0] = '\0';
-  fToA(tmp, ldata->mag[0]);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // magnetometer y
-  tmp[0] = '\0';
-  fToA(tmp, ldata->mag[1]);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // magnetometer z
-  tmp[0] = '\0';
-  fToA(tmp, ldata->mag[2]);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // 9-axis tempertare
-  //tmp[0] = '\0';
-  //fToA(tmp, ldata->temp);
-  //strcat(out, tmp);
-  //strcat(out, ";");
-
-  strcat(out, ";");
-
-  // set message length
-  tmp[0] = '\0';
-  itoa(strlen(out), tmp, 10);
-  strcat(out, tmp);
-  strcat(out, ",");
-
-  // calculate checksum
-  int cs = 0;
-  uint8_t pos = 0;
-  while(out[pos] != '\0') {
-  cs ^= (unsigned char) out[pos];
-  pos++;
+  // Gyro
+  for(int i = 0; i < 3; i++) {
+    union {
+      uint16_t i;
+      char c[2];
+    } gyr;
+    gyr.i = (uint16_t) (ldata->gyr[i] * FIXED_PT_12_4);
+    for(int j = sizeof(gyr.c)-1; j > -1; j--)
+      out[pos++] = gyr.c[j];
   }
 
-  tmp[0] = '\0';
-  itoa(cs, tmp, 16);
-  strcat(out, tmp);
-  strcat(out, "*");
+  // Magnetometer
+  for(int i = 0; i < 3; i++) {
+    union {
+      uint16_t i;
+      char c[2];
+    } mag;
+    mag.i = (uint16_t) (ldata->mag[i] * FIXED_PT_4_12);
+    for(int j = sizeof(mag.c)-1; j > -1; j--)
+      out[pos++] = mag.c[j];
+  }
+
+  // Pressure
+  union {
+    uint16_t i;
+    char c[2];
+  } pres;
+  pres.i = (uint16_t) (mdata->pressure * FIXED_PT_8_8);
+  for(int i = sizeof(pres.c)-1; i > -1; i--)
+    out[pos++] = pres.c[i];
+
+  // Altitude
+  union {
+    uint16_t i;
+    char c[2];
+  } alt;
+  alt.i = (uint16_t) (mdata->altitude * FIXED_PT_14_2);
+  for(int i = sizeof(alt.c)-1; i > -1; i--)
+    out[pos++] = alt.c[i];
+
+  // Placeholder for pressure tap data
+  for(int i = 0; i < 12; i++)
+    out[pos++] = '\0';
+
+  out[pos++] = '*'; // Footer
+
+  char checksum = 0;
+  // Calculate checksum
+  for(int i = 0; i < pos; i++) {
+    checksum ^= out[i];
+  }
+
+  out[pos++] = checksum;
+
+  return pos;
 }

@@ -6,6 +6,6 @@
 #include "lsm9ds1.h"
 #include "barometer.h"
 
-void createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struct MS5611data *mdata);
+int createPacket(char* out, struct LSMData *ldata, struct GPSData *gdata, struct MS5611data *mdata);
 #endif
 
