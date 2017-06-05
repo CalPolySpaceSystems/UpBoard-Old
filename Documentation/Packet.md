@@ -4,7 +4,9 @@ These telemetry packets are used to communicate rocket status with the ground st
 
 There are several components that make up a complete packet:
 
-`C<rtc 42:41><time 40:37><gps 36:29><temp 28:17><acc 26:24><gryo 23:21><mag 20:18><baro 17:14><pres 13:2>*<CS 0>`
+`C<rtc 51:50><time 49:46><gps 45:38><temp 37:36><acc 35:30><gryo 29:24><mag 23:18><baro 17:14><pres 13:2>*<CS 0>`
+
+Total: 53 bytes
 
 #### Header
 
