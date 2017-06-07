@@ -16,11 +16,12 @@
 
 // Define digial pins
 #define BUZZER 3
-#define LED 4
+#define LED 13
 #define SDSELECT 8
 #define AD7606_CS 4
 #define AD7606_CONVST 11
 #define AD7606_RESET 9
+
 
 #define FILEPREFIX "updata"
 
@@ -48,7 +49,9 @@ void setup() {
   // XBee module
   SerialXbee.begin(9600);
   // GPS
-  SerialGPS.begin(115200);
+  SerialGPS.begin(9600);
+  setupGPSNMEAStrings(&SerialGPS,  &SerialUSB);
+  flushGPS(&SerialGPS);
   
   Wire.begin();
 
@@ -131,7 +134,7 @@ void loop() {
   readGPS();
   readLSM(&ldata);
   readA3G(A3GData);
-  
+
   if ((millis() - lastBaroRead) > 10) {
     readPressureMS5611(&mdata); // Take a baro reading 
     mdata.temperature = ldata.temp; // Update temperature
