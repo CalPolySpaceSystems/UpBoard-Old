@@ -50,7 +50,6 @@ void readRawA3G(int16_t *rawA3G){
 		Wire.endTransmission(false);
 		
 		Wire.requestFrom(A3G_DEVICE_ADD,1,true);
-		while (Wire.available() == 0);
 		
 		rawA3G[i] = (Wire.read()<< 8);
 
@@ -59,7 +58,6 @@ void readRawA3G(int16_t *rawA3G){
 		Wire.endTransmission(false);
 				
 		Wire.requestFrom(A3G_DEVICE_ADD,1,true);
-		while (Wire.available() == 0);
 				
 		rawA3G[i] |= (Wire.read());
 	}
@@ -95,7 +93,6 @@ bool checkReg(byte deviceAddress, byte targetRegister, byte expectedValue){
 	Wire.endTransmission(false);
 
 	Wire.requestFrom(deviceAddress,1,true);
-	while(Wire.available() == 0);
 	
 	byte regValue = Wire.read();
 
