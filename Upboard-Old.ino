@@ -1,3 +1,7 @@
+/*
+ * UpBoardX Legacy Code
+ */
+
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
@@ -16,7 +20,7 @@
 
 // Define digial pins
 #define BUZZER 3
-#define LED 13
+#define LED LED_BUILTIN
 #define SDSELECT 8
 #define AD7606_CS 4
 #define AD7606_CONVST 11
