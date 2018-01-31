@@ -3,9 +3,9 @@
 #include <Wire.h>
 
 #include "priv/imu_priv.h"
+#include "imu.h"
 
 byte devAdd[3] = {LSM_AG_ADR,LSM_AG_ADR,LSM_MAG_ADR};
-
 byte startReg[3] = {LSM_ACC_START,LSM_GYRO_START,LSM_MAG_START};
 
 void writeReg(byte deviceAddress, byte targetRegister, byte newValue){
@@ -68,15 +68,15 @@ void initIMU(){
  
 void readRawLSM(struct IMU_packet_raw** out){
 
-  int16_t * ind = &(out->accel_x);
-  uint8_t read[6];
+  int16_t * ind = &(out[0]->accel_x);
+  uint8_t raw[6];
   
   for (int i = 0; i<9; i+=3){
     
-    readReg(startReg [i/3], devAdd [i/3], 6, read);
+    readReg(startReg [i/3], devAdd [i/3], 6, raw);
     
     for (int j = 0; j < 3; i++) {
-    out[i+j] = (read[2*i+1]<<8) | (read[2*i]);
+    ind[i+j] = 123;//((raw[2*i+1]<<8) | (raw[2*i]));
     }
     
   }
@@ -88,7 +88,7 @@ void readRawLSM(struct IMU_packet_raw** out){
 
 uint8_t readRawA3G(struct IMU_packet_raw** out){
   
-  int16_t * ind = &(out->gyro_x);
+  int16_t * ind = &(out[0]->gyro_x);
   int16_t reading;
   uint8_t rc;
   
@@ -131,28 +131,27 @@ uint8_t readRawIMU(struct IMU_packet_raw** out){
 
 void readFloatIMU(struct IMU_packet** out){
 	
-	struct IMU_packet_raw rawIMU;
+	struct IMU_packet_raw** rawIMU;
 	
-	int16_t * indRaw = &(rawIMU->accel_x);
-	int16_t * indOut = &(out->accel_x);
+	int16_t * indRaw = &(rawIMU[0]->accel_x);
+	float * indOut = &(out[0]->accel_x);
 	
-	uint8_t switchGyro = readRawIMU(&rawIMU);
+	uint8_t switchGyro = readRawIMU(rawIMU);
 	
-	for (i=0;i<3;i++){
+	for (int i=0;i<3;i++){
 		indOut[i] = indRaw[i]*LSM_ACC_FACT; 
 	}
 	
-	for (i=3;i<6;i++){
+	for (int i=3;i<6;i++){
 		if (1<<(i-3)& switchGyro){
 			indOut[i] = indRaw[i]*A3G_GYRO_FACT;
 		}
 		else{
 			indOut[i] = indRaw[i]*LSM_GYRO_FACT;
 		}
-		indOut[i] = indRaw[i]*floatFact[i]; 
 	}
 	
-	for (i=6;i<9;i++){
+	for (int i=6;i<9;i++){
 		indOut[i] = indRaw[i]*LSM_MAG_FACT; 
 	}
 	

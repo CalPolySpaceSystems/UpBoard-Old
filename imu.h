@@ -10,7 +10,7 @@
 #define _IMU_H_
 
 struct IMU_packet {
-  uint16_t id;
+  uint8_t id;
   uint16_t rtc;
   float accel_x;
   float accel_y;
@@ -24,7 +24,7 @@ struct IMU_packet {
 }__attribute__((packed)) floatIMU;
 
 struct IMU_packet_raw {
-  uint16_t id;
+  uint8_t id;
   uint16_t rtc;
   int16_t  accel_x;
   int16_t  accel_y;
@@ -37,13 +37,9 @@ struct IMU_packet_raw {
   int16_t  mag_z;
 }__attribute__((packed)) rawIMU;
 
-typedef struct IMU_packet fPkt;
-
-typedef struct IMU_packet_raw rPkt;
-
 void initIMU(void);
 
-uint8_t readRawIMU(struct rawIMU *out);
-void readFloatIMU(struct floatIMU *out);
+uint8_t readRawIMU(struct rawIMU** out);
+void readFloatIMU(struct floatIMU** out);
 
 #endif

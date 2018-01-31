@@ -42,7 +42,7 @@ struct LSMData offset;
 
 //char fileName[48];
 
-  struct floatIMU *fpkt;
+//struct floatIMU fpkt;
 
 void setup() {
   pinMode(BUZZER, OUTPUT);
@@ -138,12 +138,12 @@ void readGPS() {
 */
 
 void loop() {
-
-  readFloatIMU(fpkt);
+  struct IMU_packet data;
+  readFloatIMU(&data);
   
   /* Create packet */
 
-  SerialXbee.write((byte *)&floatIMU, sizeof(floatIMU));
+  SerialXbee.write((byte *)pt, sizeof(pt));
   
 }
 
