@@ -4,17 +4,9 @@
 
 #include "priv/imu_priv.h"
 
-enum devAdd{
-	LSM_AG_ADR
-	LSM_AG_ADR
-	LSM_MAG_ADR
-};
+byte devAdd[3] = {LSM_AG_ADR,LSM_AG_ADR,LSM_MAG_ADR};
 
-enum startReg{
-	LSM_ACC_START
-	LSM_GYRO_START
-	LSM_MAG_START
-};
+byte startReg[3] = {LSM_ACC_START,LSM_GYRO_START,LSM_MAG_START};
 
 void writeReg(byte deviceAddress, byte targetRegister, byte newValue){
 	Wire.beginTransmission(deviceAddress);
@@ -43,6 +35,22 @@ bool checkReg(byte deviceAddress, byte targetRegister, byte expectedValue){
 	
 }
 
+void readReg(uint8_t dev, uint8_t startReg, uint8_t len, byte *data) {
+  Wire.beginTransmission(dev);
+  Wire.write(startReg);
+  Wire.endTransmission();
+
+  // request chuck of data and continue reading after start register.
+  Wire.requestFrom(dev, len);
+
+  // wait for data
+  while(Wire.available() == 0){};
+
+  for(int i = 0; i < len; i++) {
+  data[i] = Wire.read();
+  }
+}
+
 void initIMU(){
   writeReg(A3G_CTRL_REG1,0b00001111,A3G_DEVICE_ADD); // Enable all Gyro axes, Set Bandwidth
   writeReg(A3G_CTRL_REG2,0b00000011,A3G_DEVICE_ADD); // High Pass filter settings
@@ -56,15 +64,72 @@ void initIMU(){
   writeReg(LSM_MAG_ADR, LSM_CTRL_REG3_M, 0b00000000); //enable mag continuous
 }
 
+/* LSM9DS1 */
+ 
+void readRawLSM(struct IMU_packet_raw** out){
 
-uint8_t readRawIMU(struct IMU_packet_raw *out){
+  int16_t * ind = &(out->accel_x);
+  uint8_t read[6];
+  
+  for (int i = 0; i<9; i+=3){
+    
+    readReg(startReg [i/3], devAdd [i/3], 6, read);
+    
+    for (int j = 0; j < 3; i++) {
+    out[i+j] = (read[2*i+1]<<8) | (read[2*i]);
+    }
+    
+  }
+ 
+}
+
+
+/* A3G4250D */
+
+uint8_t readRawA3G(struct IMU_packet_raw** out){
+  
+  int16_t * ind = &(out->gyro_x);
+  int16_t reading;
+  uint8_t rc;
+  
+  for (uint8_t i=0;i<3;i++){
+  
+    // Grab the data in two reads
+    Wire.beginTransmission(A3G_DEVICE_ADD);
+    Wire.write(A3G_OUT_START + 2*i + 1);
+    Wire.endTransmission(false);
+    
+    Wire.requestFrom(A3G_DEVICE_ADD,1,true);
+    
+    reading = (Wire.read()<< 8);
+
+    Wire.beginTransmission(A3G_DEVICE_ADD);
+    Wire.write(A3G_OUT_START +  2*i);
+    Wire.endTransmission(false);
+        
+    Wire.requestFrom(A3G_DEVICE_ADD,1,true);
+        
+    reading |= (Wire.read());
+    
+    // Add to struct only if is not saturated
+    if (abs(reading) < 32600){
+      ind[i] = reading;
+      rc |= (1<<i);
+    }
+  }
+  
+  return rc;
+}
+
+
+uint8_t readRawIMU(struct IMU_packet_raw** out){
 	
-	readRawLSM(&out);
-	return readRawA3G(&out);
+	readRawLSM(out);
+	return readRawA3G(out);
 
 }
 
-void readFloatIMU(struct IMU_packet *out){
+void readFloatIMU(struct IMU_packet** out){
 	
 	struct IMU_packet_raw rawIMU;
 	
@@ -93,60 +158,4 @@ void readFloatIMU(struct IMU_packet *out){
 	
 } 
  
-/* LSM9DS1 */
- 
-void readRawLSM(struct rawLSM *out){
-  
-  int16_t * ind = &(out->accel_x);
-  uint8_t read[6];
-  
-  for (int i = 0; i<9; i+=3){
-	  
-	  readRegister(readAddresses [i/3], devAddresses [i/3], 6, read);
-	  
-	  for (int j = 0; j < 3; i++) {
-		ind[i+j] = (read[2*i+1]<<8) | (read[2*i]);
-	  }
-	  
-  }
- 
-}
-
-
-/* A3G4250D */
-
-uint8_t readRawA3G(struct rawA3G *out){
-	
-	int16_t * ind = &(out->gyr_x);
-	int16_t reading;
-	uint8_t rc;
-	
-	for (uint8_t i=0;i<3;i++){
-	
-		// Grab the data in two reads
-		Wire.beginTransmission(A3G_DEVICE_ADD);
-		Wire.write(A3G_OUT_START + 2*i + 1);
-		Wire.endTransmission(false);
-		
-		Wire.requestFrom(A3G_DEVICE_ADD,1,true);
-		
-		reading = (Wire.read()<< 8);
-
-		Wire.beginTransmission(A3G_DEVICE_ADD);
-		Wire.write(A3G_OUT_START +  2*i);
-		Wire.endTransmission(false);
-				
-		Wire.requestFrom(A3G_DEVICE_ADD,1,true);
-				
-		reading |= (Wire.read());
-		
-		// Add to struct only if is not saturated
-		if (abs(reading) < 32600){
-			ind[i] = reading;
-			rc |= (1<<i);
-		}
-	}
-	
-	return rc;
-}
 

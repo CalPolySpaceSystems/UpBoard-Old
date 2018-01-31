@@ -3,8 +3,8 @@
 #define _IMU_PRIV_H_
 
 // Device addresses
-#define LSM_AG_ADR (0B1101011)
-#define LSM_MAG_ADR (0B0011110)
+#define LSM_AG_ADR (0b1101011)
+#define LSM_MAG_ADR (0b0011110)
 
 // CTRL registers
 #define LSM_CTRL_REG4    (0b00011110)
@@ -17,7 +17,7 @@
 
 // Data registers
 #define LSM_ACC_START  (0b00101000)
-#define LSM_GYRO_START (0B00011000)
+#define LSM_GYRO_START (0b00011000)
 #define LSM_MAG_START  (0b00101000)
 #define LSM_TS_START   (0b00010101)
 
