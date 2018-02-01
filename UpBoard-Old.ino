@@ -112,16 +112,9 @@ void loop() {
     };
     baroCount++;
   };
-  /*
-  primeTempMS5611();
-  delay(10);
-  readTempMS5611(&barometer);
-  primePressureMS5611();
-  delay(10);
-  readPressureMS5611(&barometer);
-  buildPacketMS5611(&barometer);
-  */
 
+  buildPacketMS5611(&barometer);
+  
   /* GPS Read Process */
 
   /* Pressure Tap Read Process */
