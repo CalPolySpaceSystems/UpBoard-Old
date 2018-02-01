@@ -50,14 +50,15 @@ void setup() {
   Wire.begin();
 
   SerialXbee.begin(9600);
-  SerialXbee.write("MEME");
+  
   // Initialize both IMUs
   initIMU();
-  SerialXbee.write("MEME2");
   digitalWrite(LED, HIGH);
   beep(BUZZER, 660, 400);
   beep(BUZZER, 770, 400);
 
+  // Prime barometer
+  
 }
 
 /*
@@ -87,11 +88,31 @@ void setup() {
 struct BAROMETER_packet barometer;
 struct IMU_packet imu;
 
+uint8_t baroCount = 0;
+
 void loop() {
+  
   /* IMU read process */
   readFloatIMU(&imu);
   
   /* Barometer read process */
+  if (millis() - lastBaroRead > 10){
+    if baroCount{
+      readPressreMS5611(&barometer);
+      if baroCount < 255{
+        primePressureMS5611();
+      };
+      else{
+        primeTempMS5611();
+      };
+    };
+    else{
+      readTempMS5611(&barometer);
+      primePressureMS5611();
+    };
+    baroCount++;
+  };
+  /*
   primeTempMS5611();
   delay(10);
   readTempMS5611(&barometer);
@@ -99,16 +120,15 @@ void loop() {
   delay(10);
   readPressureMS5611(&barometer);
   buildPacketMS5611(&barometer);
+  */
 
+  /* GPS Read Process */
+
+  /* Pressure Tap Read Process */
+  
   /* Send out the data */
   write_packet((byte *)&imu, sizeof(imu));
   write_packet((byte *)&barometer, sizeof(barometer));
-
-  /* Create packet
-  SerialXbee.write((byte *)&data, sizeof(data));
-  SerialXbee.write(ENDING >> 8);
-  SerialXbee.write(ENDING);
-  */
 
     
 }
