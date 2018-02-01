@@ -33,13 +33,19 @@
 #define SerialXbee Serial1
 #define SerialGPS Serial3
 
+// Data packet structs
+struct BAROMETER_packet   barometer;
+struct IMU_packet         imu;
+
+uint8_t baroCount = 0;
+uint8_t lastBaroRead;
+
 /* Write the packet data out to the Xbee */
 void write_packet(byte * data, size_t data_size) {
   SerialXbee.write(data, data_size);
   SerialXbee.write(ENDING >> 8);
   SerialXbee.write(ENDING); 
 }
-
 
 void setup() {
   pinMode(BUZZER, OUTPUT);
@@ -50,14 +56,24 @@ void setup() {
   Wire.begin();
 
   SerialXbee.begin(9600);
-  
-  // Initialize both IMUs
-  initIMU();
+  //SerialGPS.begin(9600);
+
   digitalWrite(LED, HIGH);
   beep(BUZZER, 660, 400);
   beep(BUZZER, 770, 400);
 
-  // Prime barometer
+  // Initialize both IMUs
+  initIMU();
+
+  // Initialize barometer and get initial values
+  initMS5611();
+
+  primePressureMS5611();
+  delay(10);
+  readPressureMS5611(&barometer);
+  primeTempMS5611();
+  lastBaroRead = millis();
+  delay(10);
   
 }
 
@@ -85,10 +101,6 @@ void setup() {
   }
 */
 
-struct BAROMETER_packet barometer;
-struct IMU_packet imu;
-
-uint8_t baroCount = 0;
 
 void loop() {
   
