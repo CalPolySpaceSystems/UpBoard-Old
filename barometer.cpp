@@ -8,6 +8,7 @@
 #define BARO_ADDRESS 	(0x77)
 #define BARO_RESET 		(0x1E)
 #define BARO_PROM_READ 	(0xA2)
+#define BAROMETER_ID 4
 
 // calibration data
 uint16_t C[7] = {0};
@@ -73,7 +74,7 @@ uint32_t readRawMS5611(void) {
  *     MS5611 primed for temperature
  *     10 ms delay after priming
  */
-void readTempMS5611(struct MS5611data *data) {
+void readTempMS5611(struct BAROMETER_packet *data) {
   uint32_t D2;
   int32_t T;
   int32_t dT;
@@ -83,7 +84,7 @@ void readTempMS5611(struct MS5611data *data) {
   // Below, 'dT' and '_C[6]'' must be casted in order to prevent overflow
   // A bitwise division can not be dobe since it is unpredictible for signed integers
   T = 2000 + ((int64_t)dT * C[6])/8388608;
-  data->temperature = T / 100.0;
+  data->temp = T / 100.0;
   return;
 }
 
@@ -92,10 +93,10 @@ void readTempMS5611(struct MS5611data *data) {
  *    MS5611 primed for pressure
  *    10 ms delay after priming
 */
-void readPressureMS5611(struct MS5611data *data) {
+void readPressureMS5611(struct BAROMETER_packet *data) {
   uint32_t D1 = readRawMS5611();
 
-  int32_t dT = (int32_t)(((((data->temperature) * 100.0) - 2000) * 8388608) / C[6]);
+  int32_t dT = (int32_t)(((((data->temp) * 100.0) - 2000) * 8388608) / C[6]);
 
   int64_t OFF  = (int64_t)C[2]*65536
    + (int64_t)C[4]*dT/128;
@@ -110,15 +111,23 @@ void readPressureMS5611(struct MS5611data *data) {
 }
 
 // Calculate altitude using data from MS5611data struct
-void calcAltitudeMS5611(struct MS5611data *data) {
-  data->altitude = ((pow((1013.25 / data->pressure), 1/5.257) - 1.0) * (data->temperature + 273.15)) / 0.0065;
+void calcAltitudeMS5611(BAROMETER_packet *data) {
+  data->altitude = ((pow((1013.25 / data->pressure), 1/5.257) - 1.0) * (data->temp + 273.15)) / 0.0065;
 }
 
 // Convert MS5611 struct data to string for output
-String ms5611ToString(struct MS5611data *data) {
+String ms5611ToString(struct BAROMETER_packet *data) {
   String out = "Pressure = " + String(data->pressure);
-  out += "\nTemperature = " + String(data->temperature);
+  out += "\nTemperature = " + String(data->temp);
   out += "\nAltitude = " + String(data->altitude);
   out += "\n";
   return out;
+}
+
+// Add in RTC and ID to the packet for transmission
+void buildPacketMS5611(struct BAROMETER_packet *data) {
+    calcAltitudeMS5611(data);
+    data->rtc = 1000;
+    data->id = BAROMETER_ID;
+    return;
 }
