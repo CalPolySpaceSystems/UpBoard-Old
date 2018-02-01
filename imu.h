@@ -21,7 +21,7 @@ struct IMU_packet {
   float mag_x;
   float mag_y;
   float mag_z;
-}__attribute__((packed)) floatIMU;
+}__attribute__((packed));
 
 struct IMU_packet_raw {
   uint8_t id;
@@ -35,11 +35,11 @@ struct IMU_packet_raw {
   int16_t  mag_x;
   int16_t  mag_y;
   int16_t  mag_z;
-}__attribute__((packed)) rawIMU;
+}__attribute__((packed));
 
 void initIMU(void);
 
-uint8_t readRawIMU(struct rawIMU** out);
-void readFloatIMU(struct floatIMU** out);
+uint8_t readRawIMU(struct IMU_packet_raw* out);
+void readFloatIMU(struct IMU_packet* out);
 
 #endif

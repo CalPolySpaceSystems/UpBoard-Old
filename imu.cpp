@@ -40,12 +40,13 @@ void readReg(uint8_t dev, uint8_t startReg, uint8_t len, byte *data) {
   Wire.write(startReg);
   Wire.endTransmission();
 
+
   // request chuck of data and continue reading after start register.
   Wire.requestFrom(dev, len);
 
   // wait for data
   while(Wire.available() == 0){};
-
+  //Serial1.println('w');
   for(int i = 0; i < len; i++) {
   data[i] = Wire.read();
   }
@@ -66,15 +67,14 @@ void initIMU(){
 
 /* LSM9DS1 */
  
-void readRawLSM(struct IMU_packet_raw** out){
+void readRawLSM(struct IMU_packet_raw* out){
 
-  int16_t * ind = &(out[0]->accel_x);
+  int16_t * ind = &(out->accel_x);
   uint8_t raw[6];
-  
+
   for (int i = 0; i<9; i+=3){
     
     readReg(startReg [i/3], devAdd [i/3], 6, raw);
-    
     for (int j = 0; j < 3; i++) {
     ind[i+j] = 123;//((raw[2*i+1]<<8) | (raw[2*i]));
     }
@@ -86,9 +86,9 @@ void readRawLSM(struct IMU_packet_raw** out){
 
 /* A3G4250D */
 
-uint8_t readRawA3G(struct IMU_packet_raw** out){
+uint8_t readRawA3G(struct IMU_packet_raw* out){
   
-  int16_t * ind = &(out[0]->gyro_x);
+  int16_t * ind = &(out->gyro_x);
   int16_t reading;
   uint8_t rc;
   
@@ -122,22 +122,28 @@ uint8_t readRawA3G(struct IMU_packet_raw** out){
 }
 
 
-uint8_t readRawIMU(struct IMU_packet_raw** out){
+uint8_t readRawIMU(struct IMU_packet_raw* out){
 	
-	readRawLSM(out);
+	//readRawLSM(out);
 	return readRawA3G(out);
 
 }
 
-void readFloatIMU(struct IMU_packet** out){
+void readFloatIMU(struct IMU_packet* out){
 	
-	struct IMU_packet_raw** rawIMU;
-	
-	int16_t * indRaw = &(rawIMU[0]->accel_x);
-	float * indOut = &(out[0]->accel_x);
-	
+	struct IMU_packet_raw* rawIMU;
+
+  // Set packet ID
+  out->id = 3;
+
+  // Get timestamp
+  out->rtc = 1000; //(uint16_t) millis()/1000;
+  
+	int16_t * indRaw = &(rawIMU->accel_x);
+	float * indOut = &(out->accel_x);
+
 	uint8_t switchGyro = readRawIMU(rawIMU);
-	
+
 	for (int i=0;i<3;i++){
 		indOut[i] = indRaw[i]*LSM_ACC_FACT; 
 	}

@@ -1,6 +1,6 @@
 /*
- * UpBoardX Legacy Code
- */
+   UpBoardX Legacy Code
+*/
 
 #include <Wire.h>
 #include <SPI.h>
@@ -27,94 +27,33 @@
 #define AD7606_CONVST 11
 #define AD7606_RESET 9
 
+#define ENDING 0x4350
+
 // Give sane names to serial outputs
 #define SerialXbee Serial1
 #define SerialGPS Serial3
 
-// Sensor State
-/*
-char GPSOutput[64];
-int GPSOutputPos = -1;
-struct GPSData gdata;
-struct MS5611data mdata;
-struct LSMData offset;
-*/
-
-//char fileName[48];
-
-//struct floatIMU fpkt;
-
 void setup() {
   pinMode(BUZZER, OUTPUT);
   pinMode(LED, OUTPUT);
-  
+
   blink(LED, 1, 500);
-  
-  // USB Communication
-  //SerialUSB.begin(9600);
-  // XBee module
-  SerialXbee.begin(9600);
-  // GPS
-  //SerialGPS.begin(9600);
-  //setupGPSNMEAStrings(&SerialGPS,  &SerialUSB);
-  //flushGPS(&SerialGPS);
-  
+
   Wire.begin();
 
-#ifdef SD_CARD
-  if(!SD.begin(SDSELECT)) {
-    SerialUSB.println("SD ERROR");
-    SerialXbee.println("SD ERROR");
-    beep(BUZZER, 220, 400);
-  }
-
-  for(int i = 1; i < 100; i++){
-    fileName[0] = '\0';
-    strcat(fileName,FILEPREFIX);
-
-    if(i < 10) {
-      strcat(fileName,"0");
-    }
-    
-    char logNum[3] = "";
-    itoa(i,logNum,10);
-    strcat(fileName,logNum);
-
-    strcat(fileName,".txt");
-  
-    if (!SD.exists(fileName)){
-      break;
-    } 
-  }
-#endif
-
+  SerialXbee.begin(9600);
+  SerialXbee.write("MEME");
+  // Initialize both IMUs
   initIMU();
-  /*
-  initLSM();
-  initA3G();
-  initMS5611();
-  */
-  
-  // Read temperature requires piriming, delaying, and then reading.
-  // Since the temperature does not significantly change throughout flight,
-  // reading it at initalization is sufficent for altitude calculation.
-  //primeTempMS5611();
-  //delay(10);
-  //readTempMS5611(&mdata);
-
-  //initAD7606(AD7606_CS, AD7606_CONVST,AD7606_RESET);
-
-  // Notify successful initialization of sensors
-  //blink(LED, 3, 100);
+  SerialXbee.write("MEME2");
   digitalWrite(LED, HIGH);
-  beep(BUZZER,660, 400);
+  beep(BUZZER, 660, 400);
   beep(BUZZER, 770, 400);
 
-  //primePressureMS5611();
 }
 
 /*
-void readGPS() {
+  void readGPS() {
   // Read from the GPS if it has data available.
   while (SerialGPS.available()) {
     // get the new byte:
@@ -134,16 +73,19 @@ void readGPS() {
       GPSOutputPos++;
     }
   }
-}
+  }
 */
 
 void loop() {
   struct IMU_packet data;
   readFloatIMU(&data);
-  
+
   /* Create packet */
 
-  SerialXbee.write((byte *)pt, sizeof(pt));
-  
+  SerialXbee.write((byte *)&data, sizeof(data));
+  SerialXbee.write(ENDING >> 8);
+  SerialXbee.write(ENDING);
+
+    
 }
 
