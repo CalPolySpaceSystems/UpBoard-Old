@@ -36,3 +36,4 @@ uint8_t readRawIMU(int16_t out[]);
 void readFloatIMU(float out[]);
 
 #endif
+

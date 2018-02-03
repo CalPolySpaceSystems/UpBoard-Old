@@ -15,3 +15,4 @@ void readAD7Raw(uint16_t *rawADC);
 void readAD7Pressure(float *pressureOut);
 
 #endif
+

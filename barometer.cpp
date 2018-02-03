@@ -131,3 +131,4 @@ void buildPacketMS5611(struct BAROMETER_packet *data) {
     data->id = BAROMETER_ID;
     return;
 }
+

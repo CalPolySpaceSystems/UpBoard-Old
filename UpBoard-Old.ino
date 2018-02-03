@@ -5,9 +5,8 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
-//#include "lsm9ds1.h"
-//#include "A3G4250D.h"
-//#include "AD7606Pressure.h"
+
+#include "AD7606Pressure.h"
 #include "barometer.h"
 //#include "telemetry.h"
 #include "imu.h"
@@ -20,26 +19,30 @@
 //#define USB_TELEMETRY
 #define XBEE_TELEMETRY
 
+#define GPS_ID 2
 #define IMU_ID 3
+#define BARO_ID 4
+#define TAP_ID 5
 
 // Define digial pins
 #define BUZZER 12
 #define LED LED_BUILTIN
 //#define SDSELECT 8
-#define AD7606_CS 4
-#define AD7606_CONVST 11
-#define AD7606_RESET 9
+#define AD7606_CS 23
+#define AD7606_CONVST 24
+#define AD7606_RESET 25
 
 #define ENDING 0x4350
 
 // Give sane names to serial outputs
-#define SerialXbee Serial1
-#define SerialGPS Serial3
+#define SerialXbee Serial2
+#define SerialGPS Serial1
 
 // Data packet structs
 struct BAROMETER_packet   barometer;
 struct GPS_packet gps;
 float imuData[10];
+uint16_t pressTap[6];
 
 uint8_t baroCount = 0;
 uint8_t lastBaroRead;
@@ -64,7 +67,11 @@ void setup() {
   Wire.begin();
 
   SerialXbee.begin(19200);
-  SerialGPS.begin(115200);
+  //Serial2.begin(19200);
+  SerialGPS.begin(9600);
+
+  // Initialize the u-blox GPS to GPGLL strings only 
+  setupGPSNMEAStrings(&SerialGPS, &Serial2);
 
   digitalWrite(LED, HIGH);
   beep(BUZZER, 660, 400);
@@ -73,9 +80,11 @@ void setup() {
   // Initialize both IMUs
   initIMU();
 
+  // Initialize pressure taps
+  initAD7606(AD7606_CS, AD7606_CONVST, AD7606_RESET);
+  //pinMode(AD7606_RESET,OUTPUT);
 
-  // Initialize the u-blox GPS to GPGLL strings only 
-  setupGPSNMEAStrings(SerialGPS, SerialGPS);
+  SPI.begin();
 
   /*
   // Initialize barometer and get initial values
@@ -119,6 +128,7 @@ void loop() {
   
   /* IMU read process */
   readFloatIMU(imuData);
+  //write_packet(IMU_ID, (byte *)imuData, sizeof(imuData));
   
   /* Barometer read process *
   if (millis() - lastBaroRead > 10){
@@ -142,16 +152,25 @@ void loop() {
   */
 
   /* GPS Read Process */
-  if (readGPS()) {
+  if (readGPS(&SerialGPS)) {
     processGPS(&gps);
-    write_packet(GPS_ID, (byte *)gps, sizeof(gps));
+    gps.time = 33.0;
+    gps.lat = 12.2;
+    gps.lng = 42.1;
+    //write_packet(GPS_ID, (byte *)&gps, sizeof(gps));
   }
+
+
   /* Pressure Tap Read Process */
+  readAD7Raw(pressTap);
+  Serial2.println(pressTap[2]);
+  //write_packet(TAP_ID, (byte *)&pressTap, sizeof(pressTap));
+
   
   /* Send out the data */
   
   
-  write_packet(IMU_ID, (byte *)imuData, sizeof(imuData));
+  
   //write_packet((byte *)&barometer, sizeof(barometer));
 
     

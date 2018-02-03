@@ -15,10 +15,11 @@ struct GPS_packet {
 }__attribute__((packed));
 
 /* Setup GPS message configuration, modify in gps.cpp */
-int setupGPSNMEAStrings(Stream *gps_port, Stream *debug_port);
-void flushGPS(Stream *gps_port);
+int setupGPSNMEAStrings(USARTClass *gps_port, USARTClass *debug_port);
+void flushGPS(USARTClass *gps_port);
 int processGPS(struct GPS_packet *out);
-uint8_t readGPS(Stream *gps_port);
+uint8_t readGPS(USARTClass *gps_port);
 String gpsToString(struct GPS_packet *data);
 
 #endif
+

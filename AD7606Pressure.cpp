@@ -35,12 +35,14 @@ void readAD7Raw(uint16_t *rawADC){
 
 	SPI.beginTransaction(SPISettings(8000000,MSBFIRST,SPI_MODE3));
 	digitalWrite(ad7_CS,LOW);
-
+ 
 	for (int i = 0;i<12;i++){
 		rawADC[i] = (uint16_t)SPI.transfer(0x00);
 	}
+ 
 	digitalWrite(ad7_CS,HIGH);
 	SPI.endTransaction();
+
 	
 }
 
@@ -54,5 +56,5 @@ void readAD7Pressure(float *pressureOut){
 	for (int j=0, i = 0;j<12;j += 2, i++){
 		pressureOut[i] = (((5.0*((rawADC[j] << 8) | (rawADC[j+1])))/(32768.0))+0.0421)/(0.012105);
 	}
-
 }
+

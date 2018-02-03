@@ -4,3 +4,4 @@
 void beep(int pin, float hz, float dur);
 void blink(int pin, int times, int duration);
 #endif
+

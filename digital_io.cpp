@@ -22,3 +22,4 @@ void blink(int pin, int times, int duration) {
     delayMicroseconds(duration);
   }
 }
+
