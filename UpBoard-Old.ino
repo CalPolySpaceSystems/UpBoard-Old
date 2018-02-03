@@ -19,6 +19,8 @@
 //#define USB_TELEMETRY
 #define XBEE_TELEMETRY
 
+#define IMU_ID 3
+
 // Define digial pins
 #define BUZZER 12
 #define LED LED_BUILTIN
@@ -35,13 +37,18 @@
 
 // Data packet structs
 struct BAROMETER_packet   barometer;
-struct IMU_packet         imu;
+
+float imuData[10];
 
 uint8_t baroCount = 0;
 uint8_t lastBaroRead;
 
 /* Write the packet data out to the Xbee */
-void write_packet(byte * data, size_t data_size) {
+void write_packet(uint8_t id, byte * data, size_t data_size) {
+  uint16_t rtc = (uint16_t)(millis()/1000);
+  SerialXbee.write(id);
+  SerialXbee.write(rtc);
+  SerialXbee.write(rtc >> 8);
   SerialXbee.write(data, data_size);
   SerialXbee.write(ENDING >> 8);
   SerialXbee.write(ENDING); 
@@ -55,7 +62,7 @@ void setup() {
 
   Wire.begin();
 
-  SerialXbee.begin(9600);
+  SerialXbee.begin(19200);
   //SerialGPS.begin(9600);
 
   digitalWrite(LED, HIGH);
@@ -64,7 +71,7 @@ void setup() {
 
   // Initialize both IMUs
   initIMU();
-
+  /*
   // Initialize barometer and get initial values
   initMS5611();
 
@@ -74,7 +81,7 @@ void setup() {
   primeTempMS5611();
   lastBaroRead = millis();
   delay(10);
-  
+  */
 }
 
 /*
@@ -105,11 +112,11 @@ void setup() {
 void loop() {
   
   /* IMU read process */
-  readFloatIMU(&imu);
+  readFloatIMU(imuData);
   
-  /* Barometer read process */
+  /* Barometer read process *
   if (millis() - lastBaroRead > 10){
-    if baroCount{
+    if (baroCount){
       readPressreMS5611(&barometer);
       if baroCount < 255{
         primePressureMS5611();
@@ -132,8 +139,10 @@ void loop() {
   /* Pressure Tap Read Process */
   
   /* Send out the data */
-  write_packet((byte *)&imu, sizeof(imu));
-  write_packet((byte *)&barometer, sizeof(barometer));
+  
+  
+  write_packet(IMU_ID, (byte *)imuData, sizeof(imuData));
+  //write_packet((byte *)&barometer, sizeof(barometer));
 
     
 }

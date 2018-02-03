@@ -3,8 +3,8 @@
 #define _IMU_PRIV_H_
 
 // Device addresses
-#define LSM_AG_ADR  (0b1101010)
-#define LSM_MAG_ADR (0b0011110)
+#define LSM_AG_ADD  (0b1101010)
+#define LSM_MAG_ADD (0b0011100)
 
 // CTRL registers
 #define LSM_CTRL_REG4    (0b00011110)
@@ -12,7 +12,10 @@
 #define LSM_CTRL_REG6_XL (0b00100000)
 #define LSM_CTRL_REG1_G  (0b00010000)
 #define LSM_CTRL_REG2_M  (0b00100001)
+#define LSM_CTRL_REG1_M  (0b00100000)
+#define LSM_CTRL_REG2_M  (0b00100001)
 #define LSM_CTRL_REG3_M  (0b00100010)
+#define LSM_CTRL_REG4_M  (0b00100011)
 #define LSM_WHO_AM_I     (0b00001111)
 
 // Data registers
@@ -23,8 +26,9 @@
 
 // Converion factors
 #define LSM_GYRO_FACT (0.00875f)
-#define LSM_ACC_FACT (0.000732f)
+#define LSM_ACC_FACT (0.000738f)
 #define LSM_MAG_FACT (0.00029f)
+#define LSM_TS_FACT		(0.001907f)
 
 /* A3G4250D */
 
