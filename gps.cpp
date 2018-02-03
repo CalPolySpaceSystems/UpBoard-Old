@@ -23,6 +23,9 @@ static uint8_t TRS_10[] = {14, 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0x64, 0x00, 0
 
 static uint8_t *config[8] = {GGA_OFF, GSA_OFF, GSV_OFF, RMC_OFF, VTG_OFF, GRS_OFF, TRS_10, NULL};
 
+static uint8_t GPSOutput[48];
+static uint8_t GPSOutputPos = -2;
+
 // strtok_single behaves like strtok but doesn't treat multiple tokens as one delimiter
 static char * strtok_single (char * str, char const * delims) {
   static char  * src = NULL;
@@ -51,9 +54,9 @@ static char * strtok_single (char * str, char const * delims) {
 // Example sentences (with starting $ and * stripped out by preparser)
 // GNGLL,,,,,224439.00,V,N
 // GNGLL,3518.33426,N,12039.89241,W,224513.00,A,A
-int processGPS(char *in, struct GPSData *out) {
+int processGPS(struct GPS_packet *out) {
   char *token = NULL;
-
+  char *in = GPSOutput;
   token = strtok_single(in, NEMA_SEPERATOR);
   if(token == NULL)
     return 1;
@@ -88,13 +91,13 @@ int processGPS(char *in, struct GPSData *out) {
   out->valid = false;
   token = strtok_single(NULL, NEMA_SEPERATOR);
   if(token != NULL && !strcmp(token, "A"))
-    out->valid = true;
+    out->valid = 1;
 
   return 0;
 }
 
 /* Returns a string intended for debug logging GPS data */
-String gpsToString(struct GPSData *data) {
+String gpsToString(struct GPS_packet *data) {
   String out = "Time";
   out += String(data->time);
   out += "\nLat: ";
@@ -107,12 +110,34 @@ String gpsToString(struct GPSData *data) {
   return out;
 }
 
+/* Look for valid GPS data in RX buffer 
+ * Returns: 1 on valid packet, 0 else
+ */
+uint8_t readGPS(Stream *gps_port) {
+   while (gps_port.available()) {
+       char inChar = (char)gps_port.read();
+       if (inChar == '$') {
+           GPSOutputPos = -1;
+       } else if (GPSOutputPos > -2) {
+           GPSOutputPos++;
+           GPSOutput[GPSOutputPos] = inChar;
+
+           // check for end of message and reset
+           if (GPSOutputPos > 46) {
+               GPSOutputPos = -2;
+               return 1; 
+           }
+       }
+   }
+   return 0;
+}
+
 /* Write out configuration messages to the GPS serial line */
 int setupGPSNMEAStrings(Stream *gps_port, Stream *debug_port) {
    /* wait for port to respond */
    int i = 0, j = 0;
    int arr_length;
-   debug_port->print("Waiting for GPS...");
+   // debug_port->print("Waiting for GPS...");
    while (gps_port->available() < 1);
 
    while ((config[i])) {
@@ -124,7 +149,7 @@ int setupGPSNMEAStrings(Stream *gps_port, Stream *debug_port) {
       i++;
    }
    flushGPS(gps_port);
-   debug_port->print("done\n");
+   //debug_port->print("done\n");
    return 1;
 }
 

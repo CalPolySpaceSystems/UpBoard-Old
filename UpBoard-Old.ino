@@ -12,6 +12,7 @@
 //#include "telemetry.h"
 #include "imu.h"
 #include "digital_io.h"
+#include "gps.h"
 
 
 // Functionality switches - Comment out to disable
@@ -37,7 +38,7 @@
 
 // Data packet structs
 struct BAROMETER_packet   barometer;
-
+struct GPS_packet gps;
 float imuData[10];
 
 uint8_t baroCount = 0;
@@ -63,7 +64,7 @@ void setup() {
   Wire.begin();
 
   SerialXbee.begin(19200);
-  //SerialGPS.begin(9600);
+  SerialGPS.begin(115200);
 
   digitalWrite(LED, HIGH);
   beep(BUZZER, 660, 400);
@@ -71,6 +72,11 @@ void setup() {
 
   // Initialize both IMUs
   initIMU();
+
+
+  // Initialize the u-blox GPS to GPGLL strings only 
+  setupGPSNMEAStrings(SerialGPS, SerialGPS);
+
   /*
   // Initialize barometer and get initial values
   initMS5611();
@@ -133,9 +139,13 @@ void loop() {
   };
 
   buildPacketMS5611(&barometer);
-  
-  /* GPS Read Process */
+  */
 
+  /* GPS Read Process */
+  if (readGPS()) {
+    processGPS(&gps);
+    write_packet(GPS_ID, (byte *)gps, sizeof(gps));
+  }
   /* Pressure Tap Read Process */
   
   /* Send out the data */
