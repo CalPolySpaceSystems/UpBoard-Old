@@ -7,7 +7,7 @@
  *       delay after priming before reading.
  */
 
-struct MS5611data {
+struct MS5607data {
   float temperature;
   float pressure;
   float altitude;
@@ -23,28 +23,28 @@ struct BAROMETER_packet {
 
 
 
-void initMS5611(void);
+void initMS5607(void);
 
 // Temperature functions (must call primePressure before readTemp)
-void primeTempMS5611(void);
-void readTempMS5611(struct BAROMETER_packet *data);
+void primeTempMS5607(void);
+void readTempMS5607(struct BAROMETER_packet *data);
 
 // Pressure functions (must call primePressure before readPressure)
-void primePressureMS5611(void);
-void readPressureMS5611(struct BAROMETER_packet *data);
+void primePressureMS5607(void);
+void readPressureMS5607(struct BAROMETER_packet *data);
 
-// Calculate altitude using data from MS5611data struct
-void calcAltitudeMS5611(struct BAROMETER_packet *data);
+// Calculate altitude using data from MS5607data struct
+void calcAltitudeMS5607(struct BAROMETER_packet *data);
 
-// Convert MS5611 struct data to string for output
-String ms5611ToString(struct BAROMETER_packet *data);
-//void buildPacketMS5611(struct BAROMETER_packet *data);
+// Convert MS5607 struct data to string for output
+String MS5607ToString(struct BAROMETER_packet *data);
+//void buildPacketMS5607(struct BAROMETER_packet *data);
 
 /* Reads the raw values based on the previous priming method (Temp or Pressure)
  * ONLY CALL THIS IF YOU MUST!
- * IT IS ALREADY IMPLEMENTED IN readTempMS6511 and readPressureMS5611
+ * IT IS ALREADY IMPLEMENTED IN readTempMS6511 and readPressureMS5607
 */
-uint32_t readRawMS5611();
+uint32_t readRawMS5607();
 
 
 #endif

@@ -24,7 +24,7 @@
 #define TAP_ID 5
 
 // Define digial pins
-#define BUZZER 12
+#define BUZZER 9
 #define LED LED_BUILTIN
 //#define SDSELECT 8
 #define AD7606_CS 23
@@ -63,14 +63,7 @@ void writePacket(uint8_t id, byte * data, size_t data_size) {
 }
 
 void setup() {
-  pinMode(BUZZER, OUTPUT);
-  pinMode(LED, OUTPUT);
 
-  blink(LED, 1, 500);
-
-  Wire.begin();
-
-  SerialXbee.begin(19200);
   // Serial2.begin(19200);
   SerialGPS.begin(9600);
 
