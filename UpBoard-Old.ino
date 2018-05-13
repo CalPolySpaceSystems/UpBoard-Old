@@ -12,6 +12,8 @@
 #include "digital_io.h"
 #include "gps.h"
 
+// GPS NMEA Decoder note gpsPort is Serial1
+#include "minmea.h"
 
 // Functionality switches - Comment out to disable
 //#define SD_CARD
@@ -49,11 +51,12 @@ uint16_t pressTap[6];
 uint8_t baroCount = 0;
 int lastBaroRead = 0;
 
-uint16_t GPSOutputPos = 0;
+// GPS standards
+struct minmea_sentence_gll gpsFrame;
 
 /* Write the packet data out to the Xbee */
 void writePacket(uint8_t id, byte * data, size_t data_size) {
-  uint16_t rtc = (uint16_t)(millis()/1000);
+  uint16_t rtc = (uint16_t)(millis());
   SerialXbee.write(id);
   SerialXbee.write(rtc);
   SerialXbee.write(rtc >> 8);
@@ -64,7 +67,7 @@ void writePacket(uint8_t id, byte * data, size_t data_size) {
 
 void setup() {
 
-  // Serial2.begin(19200);
+  SerialXbee.begin(19200);
   SerialGPS.begin(9600);
 
   // Initialize the u-blox GPS to GPGLL strings only 
@@ -73,13 +76,15 @@ void setup() {
   digitalWrite(LED, HIGH);
   //beep(BUZZER, 660, 400);
   //beep(BUZZER, 770, 400);
+  
+  Wire.begin();
 
   // Initialize both IMUs
   initIMU();
 
   // Initialize pressure taps
   //initAD7606(AD7606_CS, AD7606_CONVST, AD7606_RESET);
-  pinMode(AD7606_RESET,OUTPUT);
+  //pinMode(AD7606_RESET,OUTPUT);
 
   // Set the flash chip CS HIGH
   digitalWrite(FLASH_CS, HIGH);
@@ -87,69 +92,38 @@ void setup() {
   SPI.begin();
 
   // Initialize barometer and get initial values
-  initMS5611();
-  primePressureMS5611();
-  delay(10);
-  /*readPressureMS5611(&barometer);
-  primeTempMS5611();
-  lastBaroRead = millis();
-  delay(10);
-  */
+  initMS5607();
 }
 
 void loop() {
-  
+ 	/* Barometer Read Process */
+	primePressureMS5607();
+	delay(50);
+	readPressureMS5607(&barometer);
+	delay(50);
+
+	primeTempMS5607();
+	delay(50);
+	readTempMS5607(&barometer);
+	delay(50);
+	calcAltitudeMS5607(&barometer);
+	writePacket(BARO_ID, (byte *)&barometer, sizeof(barometer));
+
   /* IMU read process */
   readFloatIMU(imuData);
   writePacket(IMU_ID, (byte *)imuData, sizeof(imuData));
-  delay(100);
 
-  blink(LED, 1, 1000);
   
-  primePressureMS5611();
-  delay(50);
-  readPressureMS5611(&barometer);
-  delay(50);
-
-  primeTempMS5611();
-  delay(50);
-  readTempMS5611(&barometer);
-  delay(50);
-  calcAltitudeMS5611(&barometer);
-  writePacket(BARO_ID, (byte *)&barometer, sizeof(barometer));
-  //Barometer read process
-  // if (millis() - lastBaroRead > 500){
-  //   if (baroCount != 2){
-  //     readPressureMS5611(&barometer);
-  //     primeTempMS5611();
-  //     baroCount = 2;
-  //     lastBaroRead = millis();
-  //   } else{
-  //     readTempMS5611(&barometer);
-  //     primePressureMS5611();
-  //     baroCount = 5;
-  //     lastBaroRead = millis();
-  //   }
-  //   //SerialXbee.print("Pressure: ");
-  //   //SerialXbee.println(barometer.pressure);
-  //   //write_packet(BARO_ID, (byte *)&barometer, sizeof(barometer));
-  // }
-
-  //buildPacketMS5611(&barometer);
-
   /* GPS Read Process */
   if (readGPS(&SerialGPS)) {
-     processGPS(&gps);
-     gps.time = 33.0;
-     gps.lat = 12.2;
-     gps.lng = 42.1;
-     writePacket(GPS_ID, (byte *)&gps, sizeof(gps));
+		if (minmea_parse_gll(&gpsFrame, (char *) getGPSPacket())) {
+			 gps.valid = gpsFrame.status;
+       gps.time = millis();
+       gps.lat = gpsFrame.latitude.value;
+       gps.lng = gpsFrame.longitude.value;
+       writePacket(GPS_ID, (byte *)&gps, sizeof(gps));
+		 }
   }
 
-
-  /* Pressure Tap Read Process */
-  //readAD7Raw(pressTap);
-  //Serial2.println(pressTap[2]);
-  //writePacket(TAP_ID, (byte *)&pressTap, sizeof(pressTap));
 }
 

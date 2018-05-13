@@ -19,6 +19,7 @@ int setupGPSNMEAStrings(HardwareSerial *gps_port);
 void flushGPS(HardwareSerial *gps_port);
 int processGPS(struct GPS_packet *out);
 uint8_t readGPS(HardwareSerial *gps_port);
+uint8_t *getGPSPacket();
 String gpsToString(struct GPS_packet *data);
 
 #endif

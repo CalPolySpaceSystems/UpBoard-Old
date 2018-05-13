@@ -23,8 +23,11 @@ static uint8_t TRS_10[] = {14, 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0x64, 0x00, 0
 
 static uint8_t *config[8] = {GGA_OFF, GSA_OFF, GSV_OFF, RMC_OFF, VTG_OFF, GRS_OFF, TRS_10, NULL};
 
-static uint8_t GPSOutput[48];
+static uint8_t GPSOutput[100];
 static uint8_t GPSOutputPos = -2;
+static char nmea_ending[2] = {'\r', '\n'};
+static uint8_t nmea_end_flag = 0;
+static uint8_t nmea_ongoing = 0;
 
 // strtok_single behaves like strtok but doesn't treat multiple tokens as one delimiter
 static char * strtok_single (char * str, char const * delims) {
@@ -117,19 +120,36 @@ uint8_t readGPS(HardwareSerial *gps_port) {
    while (gps_port->available()) {
        char inChar = (char)gps_port->read();
        if (inChar == '$') {
-           GPSOutputPos = -1;
-       } else if (GPSOutputPos > -2) {
-           GPSOutputPos++;
+					 GPSOutputPos = 0;
+           GPSOutput[GPSOutputPos++] = inChar;
+					 nmea_ongoing = 1;
+       } else if (nmea_ongoing) {
            GPSOutput[GPSOutputPos] = inChar;
 
            // check for end of message and reset
-           if (GPSOutputPos > 46) {
-               GPSOutputPos = -2;
-               return 1; 
+					 if (nmea_end_flag == 0) {
+             if (inChar == '\r') {
+                 nmea_end_flag = 1;
+             }
+					 } else {
+               if (inChar == '\n') {
+                 nmea_end_flag = 0;
+                 if (GPSOutput[GPSOutputPos - 1] == '\r') {
+									 GPSOutput[GPSOutputPos - 1] = '\0';
+									 nmea_ongoing = 0;
+                   return 1;
+                 }
+								 nmea_ongoing = 0;
+               }
            }
+					 GPSOutputPos++;
        }
    }
    return 0;
+}
+
+uint8_t * getGPSPacket() {
+  return GPSOutput;
 }
 
 /* Write out configuration messages to the GPS serial line */
